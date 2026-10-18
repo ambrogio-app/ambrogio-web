@@ -43,7 +43,7 @@ The backend version this client is compatible with is recorded in [`system-model
 ```json
 {
   "backendUrl": "https://ambrogio.example.com",
-  "language": "it"
+  "language": "en"
 }
 ```
 
