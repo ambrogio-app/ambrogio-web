@@ -142,6 +142,8 @@ La prova passa se i messaggi inviati seguono il contratto della sessione, la ses
 
 #### Relations
   * derivedFrom: [Verifica del client web](#verifica-del-client-web)
+  * satisfiedBy: [conversation-session.test.ts](../../test/features/session/model/conversation-session.test.ts)
+  * satisfiedBy: [fake-backend.ts](../../test/support/fake-backend.ts)
   * verify: [Invio del turno sul canale conversazionale](../Requirements/WebConversation.md#invio-del-turno-sul-canale-conversazionale)
   * verify: [Presentazione del rifiuto del turno](../Requirements/WebConversation.md#presentazione-del-rifiuto-del-turno)
   * verify: [Presentazione dell'errore dopo l'ammissione](../Requirements/WebConversation.md#presentazione-dellerrore-dopo-lammissione)
@@ -162,6 +164,7 @@ La prova passa se ogni comando e il campo di scrittura hanno un nome accessibile
 
 #### Relations
   * derivedFrom: [Verifica del client web](#verifica-del-client-web)
+  * satisfiedBy: [accessibility.test.tsx](../../test/app/accessibility.test.tsx)
   * verify: [Accessibilità di base dell'interfaccia](../Requirements/WebConversation.md#accessibilità-di-base-dellinterfaccia)
 ---
 
@@ -177,6 +180,8 @@ La prova passa se il primo uso genera e conserva `web-<UUID v4>` nella chiave `a
 
 #### Relations
   * derivedFrom: [Verifica del client web](#verifica-del-client-web)
+  * satisfiedBy: [client-identity.test.ts](../../test/features/session/model/client-identity.test.ts)
+  * satisfiedBy: [conversation-session.test.ts](../../test/features/session/model/conversation-session.test.ts)
   * verify: [Identificazione del browser nella sessione](../Requirements/WebConversation.md#identificazione-del-browser-nella-sessione)
 ---
 
@@ -192,6 +197,7 @@ La prova passa se il processo non è root e ascolta sulla porta 8080, l'immagine
 
 #### Relations
   * derivedFrom: [Verifica del client web](#verifica-del-client-web)
+  * satisfiedBy: [verify-docker-image.mjs](../../scripts/verify-docker-image.mjs)
   * verify: [Distribuzione come immagine Docker](../Requirements/WebConversation.md#distribuzione-come-immagine-docker)
   * verify: [Header di sicurezza del server statico](../Requirements/WebConversation.md#header-di-sicurezza-del-server-statico)
 ---
@@ -208,6 +214,8 @@ La prova passa se senza frammento compare «Nuova chat», un frammento valido ap
 
 #### Relations
   * derivedFrom: [Verifica del client web](#verifica-del-client-web)
+  * satisfiedBy: [address.test.tsx](../../test/app/address.test.tsx)
+  * satisfiedBy: [chat-address.test.ts](../../test/features/chat/model/chat-address.test.ts)
   * verify: [Chat aperta nell'indirizzo della pagina](../Requirements/WebConversation.md#chat-aperta-nellindirizzo-della-pagina)
 ---
 
@@ -223,6 +231,9 @@ La prova passa se la configurazione valida produce l'URL base e la lingua attesi
 
 #### Relations
   * derivedFrom: [Verifica del client web](#verifica-del-client-web)
+  * satisfiedBy: [App.test.tsx](../../test/app/App.test.tsx)
+  * satisfiedBy: [runtime-config.test.ts](../../test/features/configuration/model/runtime-config.test.ts)
+  * satisfiedBy: [dictionary.test.ts](../../test/shared/i18n/dictionary.test.ts)
   * verify: [Indirizzo del backend dalla configurazione di esecuzione](../Requirements/WebConversation.md#indirizzo-del-backend-dalla-configurazione-di-esecuzione)
   * verify: [Lingua dell'interfaccia dalla configurazione](../Requirements/WebConversation.md#lingua-dellinterfaccia-dalla-configurazione)
 ---
@@ -239,6 +250,7 @@ La prova passa se il Markdown delle risposte produce gli elementi attesi, l'HTML
 
 #### Relations
   * derivedFrom: [Verifica del client web](#verifica-del-client-web)
+  * satisfiedBy: [AnswerMarkdown.test.tsx](../../test/features/chat/ui/AnswerMarkdown.test.tsx)
   * verify: [Presentazione sanificata delle risposte](../Requirements/WebConversation.md#presentazione-sanificata-delle-risposte)
 ---
 
@@ -254,6 +266,10 @@ La prova passa se la schermata rispetta il contratto: anteprime di 60 caratteri 
 
 #### Relations
   * derivedFrom: [Verifica del client web](#verifica-del-client-web)
+  * satisfiedBy: [ChatApplication.test.tsx](../../test/app/ChatApplication.test.tsx)
+  * satisfiedBy: [chat-state.test.ts](../../test/features/chat/model/chat-state.test.ts)
+  * satisfiedBy: [conversation-list.test.ts](../../test/features/conversations/model/conversation-list.test.ts)
+  * satisfiedBy: [conversations-api.test.ts](../../test/features/conversations/model/conversations-api.test.ts)
   * verify: [Anteprima delle conversazioni nella barra laterale](../Requirements/WebConversation.md#anteprima-delle-conversazioni-nella-barra-laterale)
   * verify: [Apertura e continuazione di una conversazione conservata](../Requirements/WebConversation.md#apertura-e-continuazione-di-una-conversazione-conservata)
   * verify: [Navigazione durante un turno in corso](../Requirements/WebConversation.md#navigazione-durante-un-turno-in-corso)
@@ -275,6 +291,7 @@ La prova passa se il client conversa e consulta tramite le sole interfacce pubbl
 
 #### Relations
   * derivedFrom: [Verifica del client web](#verifica-del-client-web)
+  * satisfiedBy: [pinned-backend.test.ts](../../integration/pinned-backend.test.ts)
   * verify: [Client conversazionale nel browser](../Requirements/WebConversation.md#client-conversazionale-nel-browser)
 ---
 

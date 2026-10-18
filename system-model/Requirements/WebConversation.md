@@ -8,6 +8,10 @@ Il client web deve essere utilizzabile da tastiera e con un lettore di schermo i
   * type: requirement
 
 #### Relations
+  * satisfiedBy: [App.module.css](../../src/app/App.module.css)
+  * satisfiedBy: [ChatPanel.tsx](../../src/features/chat/ui/ChatPanel.tsx)
+  * satisfiedBy: [Composer.tsx](../../src/features/chat/ui/Composer.tsx)
+  * satisfiedBy: [Sidebar.tsx](../../src/features/conversations/ui/Sidebar.tsx)
   * specify: [Conversazione testuale nel browser](../Capabilities/WebConversation.md#conversazione-testuale-nel-browser)
 ---
 
@@ -22,6 +26,8 @@ Quando il client web mostra una pagina dell'elenco conversazioni, deve presentar
   * [Schermata web della chat](../Contracts/WebConversation.md#schermata-web-della-chat)
 
 #### Relations
+  * satisfiedBy: [conversation-list.ts](../../src/features/conversations/model/conversation-list.ts)
+  * satisfiedBy: [Sidebar.tsx](../../src/features/conversations/ui/Sidebar.tsx)
   * specify: [Conversazione testuale nel browser](../Capabilities/WebConversation.md#conversazione-testuale-nel-browser)
 ---
 
@@ -37,6 +43,8 @@ Quando la persona sceglie una conversazione nella barra laterale, il client web 
   * [Schermata web della chat](../Contracts/WebConversation.md#schermata-web-della-chat)
 
 #### Relations
+  * satisfiedBy: [ChatApplication.tsx](../../src/app/ChatApplication.tsx)
+  * satisfiedBy: [chat-state.ts](../../src/features/chat/model/chat-state.ts)
   * specify: [Conversazione testuale nel browser](../Capabilities/WebConversation.md#conversazione-testuale-nel-browser)
 ---
 
@@ -48,6 +56,8 @@ Quando la persona apre una conversazione conservata, il client web deve riportar
   * type: requirement
 
 #### Relations
+  * satisfiedBy: [ChatApplication.tsx](../../src/app/ChatApplication.tsx)
+  * satisfiedBy: [chat-address.ts](../../src/features/chat/model/chat-address.ts)
   * specify: [Conversazione testuale nel browser](../Capabilities/WebConversation.md#conversazione-testuale-nel-browser)
 ---
 
@@ -63,6 +73,8 @@ Ambrogio deve fornire alla famiglia un client di chat testuale utilizzabile da u
   * [Schermata web della chat](../Contracts/WebConversation.md#schermata-web-della-chat)
 
 #### Relations
+  * satisfiedBy: [ChatApplication.tsx](../../src/app/ChatApplication.tsx)
+  * satisfiedBy: [main.tsx](../../src/app/main.tsx)
   * specify: [Conversazione testuale nel browser](../Capabilities/WebConversation.md#conversazione-testuale-nel-browser)
 ---
 
@@ -74,6 +86,8 @@ Quando il client web comunica con il backend Ambrogio, deve usare il protocollo 
   * type: requirement
 
 #### Relations
+  * satisfiedBy: [conversations-api.ts](../../src/features/conversations/model/conversations-api.ts)
+  * satisfiedBy: [conversation-session.ts](../../src/features/session/model/conversation-session.ts)
   * specify: [Conversazione testuale nel browser](../Capabilities/WebConversation.md#conversazione-testuale-nel-browser)
 ---
 
@@ -88,6 +102,7 @@ Decisione concordata con la persona il 18 ottobre 2026, allineata agli altri rep
   * type: requirement
 
 #### Relations
+  * satisfiedBy: [ci.yml](../../.github/workflows/ci.yml)
   * specify: [Conversazione testuale nel browser](../Capabilities/WebConversation.md#conversazione-testuale-nel-browser)
 ---
 
@@ -102,6 +117,7 @@ Quando si crea un commit in un clone del repository con gli hook versionati atti
   * [Profilo di scansione dei segreti con gitleaks](../Contracts/WebConversation.md#profilo-di-scansione-dei-segreti-con-gitleaks)
 
 #### Relations
+  * satisfiedBy: [pre-commit](../../.githooks/pre-commit)
   * specify: [Conversazione testuale nel browser](../Capabilities/WebConversation.md#conversazione-testuale-nel-browser)
 ---
 
@@ -113,6 +129,7 @@ Il client web deve essere distribuito come immagine container che serve i file s
   * type: requirement
 
 #### Relations
+  * satisfiedBy: [Dockerfile](../../Dockerfile)
   * specify: [Conversazione testuale nel browser](../Capabilities/WebConversation.md#conversazione-testuale-nel-browser)
 ---
 
@@ -127,6 +144,7 @@ Quando un'operazione del nucleo del client web prevede un esito negativo nel pro
   * [Architettura del client web](../Contracts/WebConversation.md#architettura-del-client-web)
 
 #### Relations
+  * satisfiedBy: [result.ts](../../src/shared/result.ts)
   * specify: [Conversazione testuale nel browser](../Capabilities/WebConversation.md#conversazione-testuale-nel-browser)
 ---
 
@@ -141,6 +159,8 @@ Quando il server dei file statici del client web risponde a una richiesta, deve 
   * [Profilo dell'immagine Docker del client web](../Contracts/WebConversation.md#profilo-dellimmagine-docker-del-client-web)
 
 #### Relations
+  * satisfiedBy: [default.conf](../../nginx/default.conf)
+  * satisfiedBy: [security-headers.conf](../../nginx/security-headers.conf)
   * specify: [Conversazione testuale nel browser](../Capabilities/WebConversation.md#conversazione-testuale-nel-browser)
 ---
 
@@ -152,6 +172,7 @@ Quando il client web apre la sessione conversazionale, deve presentarsi al backe
   * type: requirement
 
 #### Relations
+  * satisfiedBy: [client-identity.ts](../../src/features/session/model/client-identity.ts)
   * specify: [Conversazione testuale nel browser](../Capabilities/WebConversation.md#conversazione-testuale-nel-browser)
 ---
 
@@ -163,6 +184,8 @@ Quando la pagina del client web viene aperta, il client deve ricavare l'indirizz
   * type: requirement
 
 #### Relations
+  * satisfiedBy: [App.tsx](../../src/app/App.tsx)
+  * satisfiedBy: [runtime-config.ts](../../src/features/configuration/model/runtime-config.ts)
   * specify: [Conversazione testuale nel browser](../Capabilities/WebConversation.md#conversazione-testuale-nel-browser)
 ---
 
@@ -177,6 +200,7 @@ Quando la famiglia invia un turno testuale dal client web, il client deve trasme
   * [Contratti pubblici del backend Ambrogio](../Contracts/WebConversation.md#contratti-pubblici-del-backend-ambrogio)
 
 #### Relations
+  * satisfiedBy: [conversation-session.ts](../../src/features/session/model/conversation-session.ts)
   * specify: [Conversazione testuale nel browser](../Capabilities/WebConversation.md#conversazione-testuale-nel-browser)
 ---
 
@@ -188,6 +212,8 @@ Quando la pagina del client web viene aperta, il client deve mostrare i testi de
   * type: requirement
 
 #### Relations
+  * satisfiedBy: [dictionaries.ts](../../src/shared/i18n/dictionaries.ts)
+  * satisfiedBy: [dictionary.ts](../../src/shared/i18n/dictionary.ts)
   * specify: [Conversazione testuale nel browser](../Capabilities/WebConversation.md#conversazione-testuale-nel-browser)
 ---
 
@@ -203,6 +229,8 @@ Mentre un turno è in corso in una conversazione, il client web deve consentire 
   * [Sessione ambrogio.v1 del client web](../Contracts/WebConversation.md#sessione-ambrogiov1-del-client-web)
 
 #### Relations
+  * satisfiedBy: [ChatApplication.tsx](../../src/app/ChatApplication.tsx)
+  * satisfiedBy: [chat-state.ts](../../src/features/chat/model/chat-state.ts)
   * specify: [Conversazione testuale nel browser](../Capabilities/WebConversation.md#conversazione-testuale-nel-browser)
 ---
 
@@ -217,6 +245,8 @@ All'apertura della pagina, il client web deve aprire una nuova chat locale come 
   * [Schermata web della chat](../Contracts/WebConversation.md#schermata-web-della-chat)
 
 #### Relations
+  * satisfiedBy: [ChatApplication.tsx](../../src/app/ChatApplication.tsx)
+  * satisfiedBy: [chat-state.ts](../../src/features/chat/model/chat-state.ts)
   * specify: [Conversazione testuale nel browser](../Capabilities/WebConversation.md#conversazione-testuale-nel-browser)
 ---
 
@@ -231,6 +261,7 @@ Quando il client web riceve `turn.rejected` per un turno, deve mostrare il messa
   * [Sessione ambrogio.v1 del client web](../Contracts/WebConversation.md#sessione-ambrogiov1-del-client-web)
 
 #### Relations
+  * satisfiedBy: [ChatPanel.tsx](../../src/features/chat/ui/ChatPanel.tsx)
   * specify: [Conversazione testuale nel browser](../Capabilities/WebConversation.md#conversazione-testuale-nel-browser)
 ---
 
@@ -245,6 +276,7 @@ Quando il client web riceve `turn.failed` per un turno ammesso, deve mostrare il
   * [Sessione ambrogio.v1 del client web](../Contracts/WebConversation.md#sessione-ambrogiov1-del-client-web)
 
 #### Relations
+  * satisfiedBy: [ChatPanel.tsx](../../src/features/chat/ui/ChatPanel.tsx)
   * specify: [Conversazione testuale nel browser](../Capabilities/WebConversation.md#conversazione-testuale-nel-browser)
 ---
 
@@ -256,6 +288,8 @@ Quando il client web mostra una risposta di Ambrogio, deve presentarla come Mark
   * type: requirement
 
 #### Relations
+  * satisfiedBy: [AnswerMarkdown.tsx](../../src/features/chat/ui/AnswerMarkdown.tsx)
+  * satisfiedBy: [ChatPanel.tsx](../../src/features/chat/ui/ChatPanel.tsx)
   * specify: [Conversazione testuale nel browser](../Capabilities/WebConversation.md#conversazione-testuale-nel-browser)
 ---
 
@@ -267,6 +301,7 @@ Quando viene creato un tag di release `vMAJOR.MINOR.PATCH`, il repository deve p
   * type: requirement
 
 #### Relations
+  * satisfiedBy: [publish-image.yml](../../.github/workflows/publish-image.yml)
   * specify: [Conversazione testuale nel browser](../Capabilities/WebConversation.md#conversazione-testuale-nel-browser)
 ---
 
@@ -278,6 +313,7 @@ Il client web deve essere sviluppato e versionato nel repository `ambrogio-web`,
   * type: requirement
 
 #### Relations
+  * satisfiedBy: [README.md](../../README.md)
   * specify: [Conversazione testuale nel browser](../Capabilities/WebConversation.md#conversazione-testuale-nel-browser)
 ---
 
@@ -292,6 +328,7 @@ Quando un turno del client web si conclude, il client deve considerare la rispos
   * [Sessione ambrogio.v1 del client web](../Contracts/WebConversation.md#sessione-ambrogiov1-del-client-web)
 
 #### Relations
+  * satisfiedBy: [conversation-session.ts](../../src/features/session/model/conversation-session.ts)
   * specify: [Conversazione testuale nel browser](../Capabilities/WebConversation.md#conversazione-testuale-nel-browser)
 ---
 
@@ -307,6 +344,7 @@ Quando la sessione conversazionale si chiude prima dell'esito di un turno, oppur
 
 #### Relations
   * derivedFrom: [Riconoscimento del completamento della risposta testuale](#riconoscimento-del-completamento-della-risposta-testuale)
+  * satisfiedBy: [ChatPanel.tsx](../../src/features/chat/ui/ChatPanel.tsx)
   * specify: [Conversazione testuale nel browser](../Capabilities/WebConversation.md#conversazione-testuale-nel-browser)
 ---
 
@@ -321,6 +359,8 @@ Se il testo da inviare è vuoto, composto di soli spazi o supera 64 KiB in UTF-8
   * [Sessione ambrogio.v1 del client web](../Contracts/WebConversation.md#sessione-ambrogiov1-del-client-web)
 
 #### Relations
+  * satisfiedBy: [Composer.tsx](../../src/features/chat/ui/Composer.tsx)
+  * satisfiedBy: [conversation-session.ts](../../src/features/session/model/conversation-session.ts)
   * specify: [Conversazione testuale nel browser](../Capabilities/WebConversation.md#conversazione-testuale-nel-browser)
 ---
 
@@ -335,6 +375,7 @@ Quando il client web aggiorna l'elenco delle conversazioni conservate, deve scar
   * [Schermata web della chat](../Contracts/WebConversation.md#schermata-web-della-chat)
 
 #### Relations
+  * satisfiedBy: [conversation-list.ts](../../src/features/conversations/model/conversation-list.ts)
   * specify: [Conversazione testuale nel browser](../Capabilities/WebConversation.md#conversazione-testuale-nel-browser)
 ---
 
@@ -346,6 +387,7 @@ Quando viene eseguito un push su qualunque branch o viene proposta una pull requ
   * type: requirement
 
 #### Relations
+  * satisfiedBy: [secret-scan.yml](../../.github/workflows/secret-scan.yml)
   * specify: [Conversazione testuale nel browser](../Capabilities/WebConversation.md#conversazione-testuale-nel-browser)
 ---
 
@@ -357,6 +399,8 @@ Il client web deve organizzare il codice per funzionalità e mantenere configura
   * type: requirement
 
 #### Relations
+  * satisfiedBy: [browser.ts](../../src/app/browser.ts)
+  * satisfiedBy: [main.tsx](../../src/app/main.tsx)
   * specify: [Conversazione testuale nel browser](../Capabilities/WebConversation.md#conversazione-testuale-nel-browser)
 ---
 
@@ -368,6 +412,8 @@ Il client web deve essere un'applicazione a pagina singola in TypeScript e React
   * type: requirement
 
 #### Relations
+  * satisfiedBy: [package.json](../../package.json)
+  * satisfiedBy: [vite.config.ts](../../vite.config.ts)
   * specify: [Conversazione testuale nel browser](../Capabilities/WebConversation.md#conversazione-testuale-nel-browser)
 ---
 
@@ -379,6 +425,7 @@ Quando la famiglia consulta dal client web una conversazione con un turno testua
   * type: requirement
 
 #### Relations
+  * satisfiedBy: [ChatPanel.tsx](../../src/features/chat/ui/ChatPanel.tsx)
   * specify: [Conversazione testuale nel browser](../Capabilities/WebConversation.md#conversazione-testuale-nel-browser)
 ---
 
@@ -390,6 +437,8 @@ Quando la pagina del client web è aperta, il client deve mostrare l'elenco dell
   * type: requirement
 
 #### Relations
+  * satisfiedBy: [ChatApplication.module.css](../../src/app/ChatApplication.module.css)
+  * satisfiedBy: [ChatApplication.tsx](../../src/app/ChatApplication.tsx)
   * specify: [Conversazione testuale nel browser](../Capabilities/WebConversation.md#conversazione-testuale-nel-browser)
 ---
 
