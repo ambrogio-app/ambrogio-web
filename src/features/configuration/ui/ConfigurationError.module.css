@@ -1,0 +1,14 @@
+.page {
+  max-width: 40rem;
+  margin: 4rem auto;
+  padding: 0 1.5rem;
+}
+
+.title {
+  font-size: 1.4rem;
+  color: var(--danger);
+}
+
+.reason {
+  color: var(--muted);
+}

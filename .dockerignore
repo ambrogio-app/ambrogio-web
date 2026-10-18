@@ -1,0 +1,11 @@
+.git
+.github
+.githooks
+node_modules
+dist
+config.json
+public/config.json
+system-model
+test
+integration
+scripts

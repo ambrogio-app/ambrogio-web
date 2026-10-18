@@ -1,0 +1,37 @@
+.markdown {
+  overflow-wrap: anywhere;
+}
+
+.markdown > :first-child {
+  margin-top: 0;
+}
+
+.markdown > :last-child {
+  margin-bottom: 0;
+}
+
+.markdown pre {
+  padding: 0.75rem;
+  overflow-x: auto;
+  border-radius: 0.5rem;
+  background: var(--code);
+}
+
+.markdown code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.9em;
+}
+
+.markdown table {
+  border-collapse: collapse;
+}
+
+.markdown th,
+.markdown td {
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--border);
+}
+
+.markdown a {
+  color: var(--accent);
+}

@@ -1,0 +1,57 @@
+:global(:root) {
+  color-scheme: light dark;
+  --background: #ffffff;
+  --surface: #f5f6f8;
+  --hover: #e9ebef;
+  --border: #d9dce2;
+  --text: #1c1f24;
+  --muted: #5d6470;
+  --accent: #2759c4;
+  --accent-soft: #dde7fb;
+  --on-accent: #ffffff;
+  --danger: #b3261e;
+  --code: #eceef2;
+  --focus: #2759c4;
+}
+
+@media (prefers-color-scheme: dark) {
+  :global(:root) {
+    --background: #15171b;
+    --surface: #1e2126;
+    --hover: #2a2e35;
+    --border: #343941;
+    --text: #e7e9ed;
+    --muted: #a0a7b3;
+    --accent: #7ea6ff;
+    --accent-soft: #23314f;
+    --on-accent: #0e1420;
+    --danger: #ff8a80;
+    --code: #262a31;
+    --focus: #7ea6ff;
+  }
+}
+
+:global(*),
+:global(*::before),
+:global(*::after) {
+  box-sizing: border-box;
+}
+
+:global(html),
+:global(body),
+:global(#root) {
+  height: 100%;
+  margin: 0;
+}
+
+:global(body) {
+  background: var(--background);
+  color: var(--text);
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  line-height: 1.5;
+}
+
+:global(:focus-visible) {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
