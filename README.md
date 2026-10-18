@@ -1,3 +1,10 @@
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset=".github/logo-dark.svg">
+    <img src=".github/logo-light.svg" alt="Ambrogio" width="320">
+  </picture>
+</p>
+
 # Ambrogio — web chat
 
 **Ambrogio** is an open source home assistant that you host yourself. This repository is its **web chat client**: an optional browser interface for talking to an Ambrogio backend, as an alternative to the terminal client.
