@@ -8,7 +8,7 @@ Il client web deve essere utilizzabile da tastiera e con un lettore di schermo i
   * type: requirement
 
 #### Relations
-  * satisfiedBy: [App.module.css](../../src/app/App.module.css)
+  * satisfiedBy: [global.css](../../src/app/global.css)
   * satisfiedBy: [ChatPanel.tsx](../../src/features/chat/ui/ChatPanel.tsx)
   * satisfiedBy: [Composer.tsx](../../src/features/chat/ui/Composer.tsx)
   * satisfiedBy: [Sidebar.tsx](../../src/features/conversations/ui/Sidebar.tsx)

@@ -1,4 +1,4 @@
-:global(:root) {
+:root {
   color-scheme: light dark;
   --background: #ffffff;
   --surface: #f5f6f8;
@@ -15,7 +15,7 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  :global(:root) {
+  :root {
     --background: #15171b;
     --surface: #1e2126;
     --hover: #2a2e35;
@@ -31,27 +31,27 @@
   }
 }
 
-:global(*),
-:global(*::before),
-:global(*::after) {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
-:global(html),
-:global(body),
-:global(#root) {
+html,
+body,
+#root {
   height: 100%;
   margin: 0;
 }
 
-:global(body) {
+body {
   background: var(--background);
   color: var(--text);
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   line-height: 1.5;
 }
 
-:global(:focus-visible) {
+:focus-visible {
   outline: 3px solid var(--focus);
   outline-offset: 2px;
 }

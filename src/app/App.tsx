@@ -4,7 +4,7 @@ import { ConfigurationError } from '../features/configuration/ui/ConfigurationEr
 import { preferredLanguage } from '../shared/i18n/dictionary';
 import { dictionaries } from '../shared/i18n/dictionaries';
 import { DictionaryProvider } from '../shared/ui/DictionaryProvider';
-import './App.module.css';
+import './global.css';
 import type { BrowserDependencies } from './browser';
 import { ChatApplication } from './ChatApplication';
 

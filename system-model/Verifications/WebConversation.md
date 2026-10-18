@@ -256,10 +256,10 @@ La prova passa se il Markdown delle risposte produce gli elementi attesi, l'HTML
 
 ### Prova della schermata della chat
 
-In jsdom con Testing Library, aprire la pagina con un backend simulato: verificare la voce «Nuova chat», inviare il primo turno e osservare risposta progressiva e nome della voce; aprire una conversazione conservata, anche iniziata da un altro client, e continuarla; caricare elenco e pagina successiva, aggiornare e verificare la ripartenza dalla prima pagina; simulare uno storico non leggibile, un turno `pending` poi concluso, un turno `interrupted`; durante un turno aprire un'altra chat, inviarvi un turno e tornare indietro; ripetere a una larghezza inferiore a 720 pixel e nelle due lingue.
+In jsdom con Testing Library, aprire la pagina con un backend simulato: verificare la voce «Nuova chat», inviare il primo turno e osservare risposta progressiva e nome della voce; aprire una conversazione conservata, anche iniziata da un altro client, e continuarla; caricare elenco e pagina successiva, aggiornare e verificare la ripartenza dalla prima pagina; simulare uno storico non leggibile, un turno `pending` poi concluso, un turno `interrupted`; durante un turno aprire un'altra chat, inviarvi un turno e tornare indietro; ripetere a una larghezza inferiore a 720 pixel e nelle due lingue. Eseguire inoltre la build di produzione con Vite in una directory temporanea ed esaminare i fogli di stile prodotti, perché jsdom non applica i fogli di stile della build.
 
 #### Details
-La prova passa se la schermata rispetta il contratto: anteprime di 60 caratteri o identificativo di 8, ripartenza dell'elenco senza cursore dopo «Aggiorna», stato in elaborazione con invito ad aggiornare e scambio concluso alla consultazione successiva, avviso di risposta interrotta, invio bloccato solo nella chat con il turno in corso, `Invio` e `Maiusc+Invio` come previsto, pannello delle conversazioni sotto 720 pixel e testi fissi nella lingua scelta secondo il dizionario. Fallisce se la pagina perde la conversazione corrente, invia due turni nella stessa conversazione o blocca le altre chat durante un turno.
+La prova passa se la schermata rispetta il contratto: anteprime di 60 caratteri o identificativo di 8, ripartenza dell'elenco senza cursore dopo «Aggiorna», stato in elaborazione con invito ad aggiornare e scambio concluso alla consultazione successiva, avviso di risposta interrotta, invio bloccato solo nella chat con il turno in corso, `Invio` e `Maiusc+Invio` come previsto, pannello delle conversazioni sotto 720 pixel e testi fissi nella lingua scelta secondo il dizionario; e se i fogli di stile della build contengono i colori dei temi chiaro e scuro, il font della pagina e l'altezza a tutta finestra di `html`, `body` e della radice dell'applicazione. Fallisce se la pagina perde la conversazione corrente, invia due turni nella stessa conversazione, blocca le altre chat durante un turno o se la build perde gli stili globali. Lo scorrimento separato delle due aree con il campo di scrittura visibile si osserva nella dimostrazione nel browser.
 
 #### Metadata
   * type: test-verification
@@ -267,6 +267,7 @@ La prova passa se la schermata rispetta il contratto: anteprime di 60 caratteri 
 #### Relations
   * derivedFrom: [Verifica del client web](#verifica-del-client-web)
   * satisfiedBy: [ChatApplication.test.tsx](../../test/app/ChatApplication.test.tsx)
+  * satisfiedBy: [build-styles.test.ts](../../test/app/build-styles.test.ts)
   * satisfiedBy: [chat-state.test.ts](../../test/features/chat/model/chat-state.test.ts)
   * satisfiedBy: [conversation-list.test.ts](../../test/features/conversations/model/conversation-list.test.ts)
   * satisfiedBy: [conversations-api.test.ts](../../test/features/conversations/model/conversations-api.test.ts)

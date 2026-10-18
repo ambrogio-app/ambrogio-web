@@ -66,6 +66,6 @@ describe('basic accessibility', () => {
   });
 
   it('defines a visible focus indicator', () => {
-    expect(readFileSync('src/app/App.module.css', 'utf8')).toMatch(/:focus-visible\)\s*{\s*outline: 3px solid/);
+    expect(readFileSync('src/app/global.css', 'utf8')).toMatch(/:focus-visible\s*{\s*outline: 3px solid/);
   });
 });
