@@ -10,10 +10,10 @@ Raggruppa le prove del comportamento del client web, della sua integrazione con 
 
 ### Analisi dell'architettura del client web
 
-Esaminare gli import di `src/core/`, `src/ui/` e `src/i18n/`, le firme delle operazioni del nucleo con esiti negativi previsti, i nomi dei file e la struttura di `test/`.
+Esaminare gli import di `src/features/`, `src/shared/` e `src/app/`, le firme delle operazioni del nucleo con esiti negativi previsti, i nomi dei file e la struttura di `test/`.
 
 #### Details
-L'analisi passa se nessun file di `src/core/` importa React, `src/ui/` o `src/i18n/` né usa `document` o `window`, le API del browser arrivano al nucleo come dipendenze da `src/main.tsx`, lo stato della chat è un reducer puro del nucleo, le operazioni con esiti negativi previsti restituiscono `Result` con varianti distinte da `kind`, i nomi dei file seguono le convenzioni del contratto e i test rispecchiano `src/` in `test/core/` e `test/ui/`. Fallisce se una di queste regole è violata.
+L'analisi passa se nessuna parte `model/` né il codice non React di `src/shared/` importa React o parti `ui/` o usa `document` o `window`, nessuna funzionalità importa un'altra funzionalità, soltanto `src/app/` collega più funzionalità e fornisce le API del browser come dipendenze, lo stato di ogni funzionalità è un reducer puro nella sua parte `model/`, le operazioni con esiti negativi previsti restituiscono `Result` con varianti distinte da `kind`, i nomi dei file seguono le convenzioni del contratto e `test/` rispecchia la struttura di `src/`. Fallisce se una di queste regole è violata.
 
 #### Metadata
   * type: analysis-verification

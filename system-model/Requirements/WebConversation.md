@@ -351,7 +351,7 @@ Quando viene eseguito un push su qualunque branch o viene proposta una pull requ
 
 ### Separazione del nucleo dall'interfaccia
 
-Il client web deve mantenere configurazione, identità, sessione conversazionale, consultazione HTTP e stato della chat in un nucleo TypeScript indipendente da React e dal DOM, usato dai componenti dell'interfaccia senza che il nucleo dipenda da essi.
+Il client web deve organizzare il codice per funzionalità e mantenere configurazione, identità, sessione conversazionale, consultazione HTTP e stato di ogni funzionalità in parti TypeScript indipendenti da React e dal DOM, usate dai componenti dell'interfaccia senza dipendere da essi.
 
 #### Metadata
   * type: requirement
