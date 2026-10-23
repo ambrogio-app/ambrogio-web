@@ -12,7 +12,7 @@ import {
 } from '../src/features/session/model/conversation-session';
 
 /** Backend revision declared in «Contratti pubblici del backend Ambrogio». */
-const expectedCommit = 'a4578db6564cc0bb96397ae5655ee7d00e022ea0';
+const expectedCommit = 'a570c013617fe7b9e944063dfd67ce2c00da398e';
 const allowedOrigin = 'https://web.example.com';
 const otherOrigin = 'https://other.example.com';
 const webRoot = fileURLToPath(new URL('..', import.meta.url));
@@ -65,10 +65,12 @@ beforeAll(async () => {
     pathToFileURL(join(backendRoot, 'apps/server/dist/runtime/conversation-server.js')).href);
   directory = await mkdtemp(join(tmpdir(), 'ambrogio-web-backend-'));
   const port = await freePort();
-  const httpConfig = join(directory, 'http.json');
-  const conversationsConfig = join(directory, 'conversations.json');
-  await writeFile(httpConfig, JSON.stringify({ host: '127.0.0.1', port, allowedOrigins: [allowedOrigin] }));
-  await writeFile(conversationsConfig, JSON.stringify({ archivePath: join(directory, 'archive.sqlite'), language: 'it' }));
+  // The backend loads each component configuration from a TypeScript module that exports it by default.
+  const httpConfig = join(directory, 'http.ts');
+  const conversationsConfig = join(directory, 'conversations.ts');
+  const module = (value: object) => `export default ${JSON.stringify(value)};\n`;
+  await writeFile(httpConfig, module({ host: '127.0.0.1', port, allowedOrigins: [allowedOrigin] }));
+  await writeFile(conversationsConfig, module({ archivePath: join(directory, 'archive.sqlite'), language: 'it' }));
   runtime = await startConversationServer({ AMBROGIO_HTTP_CONFIG_PATH: httpConfig,
     AMBROGIO_CONVERSATIONS_CONFIG_PATH: conversationsConfig }, directory, async () => ({
     orchestrator: { async *produce(history: { turns: { text: string }[] }): AsyncGenerator<ReplyPart> {

@@ -2,6 +2,7 @@
 .github
 .githooks
 node_modules
+**/node_modules
 dist
 config.json
 public/config.json
@@ -9,3 +10,5 @@ system-model
 test
 integration
 scripts
+*.env
+*.env.*

@@ -66,19 +66,21 @@ The container listens on port 8080 as an unprivileged user. HTTPS belongs to you
 
 ## Development
 
+You need Node.js 24 or later and pnpm 12.11.2 (the version in `packageManager`).
+
 ```bash
-npm ci
+pnpm install --frozen-lockfile
 cp config.example.json public/config.json   # then set backendUrl
-npm run dev
+pnpm dev
 ```
 
 | Command | What it does |
 |---|---|
-| `npm run typecheck` | TypeScript check |
-| `npm test` | Unit and interface tests with a simulated backend |
-| `npm run build` | Static files in `dist/` |
-| `npm run test:backend` | Integration test against a checkout of `ambrogio-backend` at the pinned revision, next to this repository or in `AMBROGIO_BACKEND_REPO`, built with `pnpm build` |
-| `node scripts/verify-docker-image.mjs <image>` | Checks a built image: user, port, headers and cache |
+| `pnpm typecheck` | TypeScript check |
+| `pnpm test` | Unit and interface tests with a simulated backend |
+| `pnpm build` | Static files in `dist/` |
+| `pnpm test:backend` | Integration test against a checkout of `ambrogio-backend` at the pinned revision, next to this repository or in `AMBROGIO_BACKEND_REPO`, built with `pnpm build` |
+| `node scripts/verify-docker-image.mjs <image>` | Checks a built image: labels, user, port, headers and cache |
 
 The code is organised by feature in `src/features/` (`configuration`, `session`, `conversations`, `chat`), each with a pure `model/` and a React `ui/`; shared code is in `src/shared/` and `src/app/` wires the features together.
 

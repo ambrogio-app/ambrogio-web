@@ -7,4 +7,3 @@ La famiglia interagisce con Ambrogio da un browser, in alternativa al client ter
 #### Metadata
   * type: capability
 ---
-

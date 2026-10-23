@@ -1,8 +1,9 @@
-// Verifies a built image of the web client: user, port, served files, headers and cache.
+// Verifies a built image of the web client: build context exclusions, labels, user, port, served files,
+// headers and cache.
 // Usage: node scripts/verify-docker-image.mjs <image> [amd64|arm64]
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { chmodSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -11,6 +12,8 @@ if (!image) throw new Error('Usage: node scripts/verify-docker-image.mjs <image>
 const platform = arch ? ['--platform', `linux/${arch}`] : [];
 const docker = (...args) => execFileSync('docker', args, { encoding: 'utf8' }).trim();
 
+const excluded = ['.git', '.github', '.githooks', 'node_modules', '**/node_modules', 'dist', 'config.json',
+  'public/config.json', 'system-model', 'test', 'integration', 'scripts', '*.env', '*.env.*'];
 const csp = "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; "
   + "connect-src 'self' http: https: ws: wss:; frame-ancestors 'none'; base-uri 'none'; form-action 'none'; "
   + "object-src 'none'";
@@ -39,7 +42,12 @@ function assertSecurityHeaders(response, path) {
 }
 
 try {
+  const ignored = readFileSync(new URL('../.dockerignore', import.meta.url), 'utf8').split('\n').map(line => line.trim());
+  for (const pattern of excluded) assert.ok(ignored.includes(pattern), `.dockerignore must exclude ${pattern}`);
   assert.equal(docker('image', 'inspect', '-f', '{{json .Config.ExposedPorts}}', image), '{"8080/tcp":{}}');
+  const labels = JSON.parse(docker('image', 'inspect', '-f', '{{json .Config.Labels}}', image)) ?? {};
+  assert.equal(labels['org.opencontainers.image.source'], 'https://github.com/ambrogio-app/ambrogio-web');
+  assert.equal(labels['org.opencontainers.image.licenses'], 'MIT');
   assert.notEqual(docker('run', '--rm', ...platform, '--entrypoint', 'id', image, '-u'), '0', 'nginx must not run as root');
   docker('run', '--rm', ...platform, '--entrypoint', 'sh', image, '-c', 'test ! -e /usr/share/nginx/html/config.json');
 
