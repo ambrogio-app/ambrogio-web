@@ -96,13 +96,14 @@ Quando il client web comunica con il backend Ambrogio, deve usare il protocollo 
 Quando viene eseguito un push sul branch principale, viene proposta una pull request, viene richiesta un'esecuzione manuale oppure un altro workflow del repository la richiama, la CI del client web deve eseguire la validazione e il lint del modello Reqvire, il controllo TypeScript senza emissione, la suite di test e la build, e deve fallire se uno di questi controlli fallisce.
 
 #### Details
-Il workflow `.github/workflows/ci.yml` installa pnpm e le dipendenze su Node.js 24 ed esegue, in quest'ordine, Reqvire 1.3.2 `validate` e `lint`, con il lint che fallisce se restano correzioni automatiche o elementi da rivedere; lo script di integrità del modello; `pnpm typecheck`; `pnpm test`, che usa il backend simulato locale; `pnpm build`. La prova di integrazione contro la revisione backend fissata (`pnpm test:backend`) richiede un checkout del backend e resta fuori dalla CI.
+Il workflow `.github/workflows/ci.yml` installa pnpm, gitleaks secondo il profilo di scansione dei segreti e le dipendenze su Node.js 24 ed esegue, in quest'ordine, Reqvire 1.3.2 `validate` e `lint`, con il lint che fallisce se restano correzioni automatiche o elementi da rivedere; lo script di integrità del modello; `pnpm typecheck`; `pnpm test`, che usa il backend simulato locale; `pnpm build`. La prova di integrazione contro la revisione backend fissata (`pnpm test:backend`) richiede un checkout del backend e resta fuori dalla CI.
 
 #### Metadata
   * type: requirement
 
 #### Contract References
   * [Profilo di installazione delle dipendenze del client web](../Contracts/WebConversation.md#profilo-di-installazione-delle-dipendenze-del-client-web)
+  * [Profilo di scansione dei segreti con gitleaks](../Contracts/WebConversation.md#profilo-di-scansione-dei-segreti-con-gitleaks)
 
 #### Relations
   * satisfiedBy: [ci.yml](../../.github/workflows/ci.yml)
@@ -606,4 +607,3 @@ Quando la pagina del client web è aperta, il client deve mostrare l'elenco dell
   * satisfiedBy: [ChatApplication.tsx](../../src/app/ChatApplication.tsx)
   * specify: [Conversazione testuale nel browser](../Capabilities/WebConversation.md#conversazione-testuale-nel-browser)
 ---
-
