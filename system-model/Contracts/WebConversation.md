@@ -219,6 +219,22 @@ Una Content-Security-Policy generata all'avvio per ammettere solo l'origine del 
   * define: [Header di sicurezza del server statico](../Requirements/WebConversation.md#header-di-sicurezza-del-server-statico)
 ---
 
+### Ruleset del branch principale
+
+Il repository GitHub ha un ruleset di branch chiamato `main`, con applicazione `active`, che ha come destinazione il branch predefinito, nessun attore escluso e le regole:
+
+- `pull_request`, che ammette l'integrazione solo tramite pull request, con `required_approving_review_count` uguale a 0;
+- `required_status_checks`, con i controlli `Web client checks` e `Gitleaks` prodotti da GitHub Actions e `strict_required_status_checks_policy` uguale a `false`;
+- `non_fast_forward`, che vieta la riscrittura forzata;
+- `deletion`, che vieta la cancellazione del branch.
+
+#### Metadata
+  * type: specification
+
+#### Relations
+  * define: [Controlli obbligatori prima del merge](../Requirements/WebConversation.md#controlli-obbligatori-prima-del-merge)
+---
+
 ### Schermata web della chat
 
 La pagina ha due aree: a sinistra la barra laterale delle conversazioni, a destra la conversazione corrente con il campo di scrittura. All'apertura una voce locale «Nuova chat» è selezionata come prima voce e non crea una conversazione sul backend; dopo l'invio del primo turno la voce prende come nome l'anteprima del testo inviato e resta la chat corrente. La barra laterale mostra le conversazioni della prima pagina dell'elenco HTTP, con l'anteprima del primo messaggio della persona ricavata dagli storici delle sole voci visibili, al massimo 60 caratteri con «…» se troncata; se uno storico non è disponibile la voce resta selezionabile con i primi 8 caratteri dell'identificativo. I comandi «Nuova chat», «Aggiorna» e «Altre conversazioni», quest'ultimo presente solo con una pagina successiva, completano la barra; «Aggiorna» riparte dalla prima pagina e ricarica lo storico della chat corrente. Un errore di caricamento dell'elenco è mostrato nella barra con il messaggio pubblico ricevuto.
@@ -292,3 +308,4 @@ Un turno testuale accettato e ancora in elaborazione è distinguibile dagli scam
 #### Relations
   * define: [Stato del turno in elaborazione alla riapertura](../Requirements/WebConversation.md#stato-del-turno-in-elaborazione-alla-riapertura)
 ---
+
