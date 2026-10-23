@@ -10,10 +10,10 @@ Raggruppa le prove del comportamento del client web, della sua integrazione con 
 
 ### Analisi dell'architettura del client web
 
-Esaminare gli import di `src/features/`, `src/shared/` e `src/app/`, le firme delle operazioni del nucleo con esiti negativi previsti, i nomi dei file e la struttura di `test/`.
+Esaminare le parti `model/` delle funzionalità e il codice non React di `src/shared/`: le funzioni che calcolano lo stato, le firme delle operazioni con esiti negativi previsti e l'uso delle API del browser `fetch`, `history` e `location`.
 
 #### Details
-L'analisi passa se nessuna parte `model/` né il codice non React di `src/shared/` importa React o parti `ui/` o usa `document` o `window`, nessuna funzionalità importa un'altra funzionalità, soltanto `src/app/` collega più funzionalità e fornisce le API del browser come dipendenze, lo stato di ogni funzionalità è un reducer puro nella sua parte `model/`, le operazioni con esiti negativi previsti restituiscono `Result` con varianti distinte da `kind`, i nomi dei file seguono le convenzioni del contratto e `test/` rispecchia la struttura di `src/`. Fallisce se una di queste regole è violata. Non automatizzabile: stabilire che un reducer sia puro e che ogni esito negativo previsto sia un `Result` richiede di leggere il codice; la sola regola sugli import tra cartelle è verificabile da uno strumento.
+L'analisi passa se lo stato di ogni funzionalità è un reducer puro nella sua parte `model/`, senza effetti né letture di stato esterno, le operazioni con esiti negativi previsti dal contratto restituiscono `Result` con varianti distinte da `kind`, riservando le eccezioni ai guasti inattesi, e il nucleo riceve `fetch` e la cronologia e l'indirizzo della pagina come dipendenze da `src/app/`, senza usare le globali `fetch`, `history` e `location`. Fallisce se un reducer produce effetti, se un esito negativo previsto è segnalato con un'eccezione o se il nucleo usa una di quelle globali. Non automatizzabile: stabilire che un reducer sia puro e che ogni esito negativo previsto sia un `Result` richiede di leggere il codice e i contratti, e distinguere nel testo le globali `fetch`, `history` e `location` da proprietà e metodi omonimi del progetto richiede il controllo dei tipi; import, `document`, `window` e le altre API del browser, nomi dei file e struttura dei test sono coperti dalla prova delle regole di architettura.
 
 #### Metadata
   * type: analysis-verification
@@ -39,27 +39,12 @@ L'analisi passa se la revisione è identificata in modo riproducibile e tutti gl
   * verify: [Compatibilità con l'API conversazionale del backend](../Requirements/WebConversation.md#compatibilità-con-lapi-conversazionale-del-backend)
 ---
 
-### Controllo del percorso CI del client web
-
-Esaminare `.github/workflows/ci.yml` ed eseguirlo su GitHub dopo un push sul branch principale.
-
-#### Details
-Il controllo passa se il workflow si attiva su push del branch principale, pull request, richiesta manuale e chiamata da altri workflow; installa pnpm 12.11.2 e le dipendenze con `pnpm install --frozen-lockfile` su Node.js 24; esegue Reqvire 1.3.2 `validate` e `lint` facendo fallire il job se il lint riporta correzioni automatiche o elementi da rivedere; esegue `node scripts/check-model.mjs`, `pnpm typecheck`, `pnpm test` e `pnpm build`; e l'esecuzione su GitHub termina con successo. Fallisce se manca una fase o se un controllo fallito non fa fallire il job. Non automatizzabile: l'esito dipende dall'esecuzione del workflow sui runner di GitHub, che non si riproduce nei test locali.
-
-#### Metadata
-  * type: inspection-verification
-
-#### Relations
-  * derivedFrom: [Verifica del client web](#verifica-del-client-web)
-  * verify: [Controlli CI del client web](../Requirements/WebConversation.md#controlli-ci-del-client-web)
----
-
 ### Controllo del repository del client web
 
-Esaminare il repository Git del client web, la configurazione del workspace Reqvire, `package.json` e la build.
+Esaminare il repository Git del client web, la configurazione del workspace Reqvire e le decisioni tecniche presenti nel codice.
 
 #### Details
-Il controllo passa se repository e modello sono autonomi dal backend, le decisioni del client sono tracciate in questo workspace, il client è un'applicazione React in TypeScript costruita da Vite in file statici e le versioni fissate corrispondono al contratto dello stack. Fallisce se la build richiede un processo server proprio o se una decisione del client è registrata solo nel codice. Non automatizzabile: stabilire che una decisione presente nel codice sia registrata nel modello richiede di leggere entrambi.
+Il controllo passa se repository e modello sono autonomi dal backend, il workspace Reqvire canonico è la radice del repository e ogni decisione tecnica del client presente nel codice è registrata nel modello. Fallisce se il client dipende da file del repository del backend o se una decisione del client è registrata solo nel codice. Non automatizzabile: stabilire che una decisione presente nel codice sia registrata nel modello richiede di leggere entrambi.
 
 #### Metadata
   * type: inspection-verification
@@ -67,30 +52,14 @@ Il controllo passa se repository e modello sono autonomi dal backend, le decisio
 #### Relations
   * derivedFrom: [Verifica del client web](#verifica-del-client-web)
   * verify: [Repository autonomo del client web](../Requirements/WebConversation.md#repository-autonomo-del-client-web)
-  * verify: [Stack del client web](../Requirements/WebConversation.md#stack-del-client-web)
----
-
-### Controllo dell'hook pre-commit dei segreti
-
-Attivare l'hook con `git config core.hooksPath .githooks` in un clone di prova, mettere in staging un file con un token fittizio riconosciuto da gitleaks e tentare il commit; ripetere con un file privo di segreti e con `gitleaks` assente dal `PATH`.
-
-#### Details
-Il controllo passa se il commit con il token fittizio viene rifiutato senza mostrarne il valore, il commit senza segreti riesce e, senza `gitleaks` nel `PATH`, il commit viene rifiutato con un messaggio che indica come installarlo. Il clone di prova viene eliminato dopo il controllo. Non automatizzabile: il controllo richiede `gitleaks` installato e un clone con gli hook attivi, condizioni che né la suite di test né la CI predispongono.
-
-#### Metadata
-  * type: inspection-verification
-
-#### Relations
-  * derivedFrom: [Verifica del client web](#verifica-del-client-web)
-  * verify: [Controllo dei segreti prima del commit](../Requirements/WebConversation.md#controllo-dei-segreti-prima-del-commit)
 ---
 
 ### Controllo della pubblicazione dell'immagine
 
-Esaminare `.github/workflows/publish-image.yml` ed eseguirlo su GitHub con un tag di release.
+Al push di un tag di release, consultare su GitHub l'esecuzione di `.github/workflows/publish-image.yml` e il pacchetto pubblicato in GHCR.
 
 #### Details
-Il controllo passa se il workflow si attiva solo per i tag `vMAJOR.MINOR.PATCH`, verifica che la versione di `package.json` coincida, richiama CI e scansione dei segreti prima di costruire, verifica entrambe le immagini prima di qualunque push e pubblica il manifest con `linux/amd64` e `linux/arm64` senza tag `latest`. Fallisce se una pubblicazione avviene con controlli falliti. Non automatizzabile: la pubblicazione si osserva soltanto eseguendo il workflow su GitHub con un tag di release e i permessi del registro GHCR.
+Il controllo passa se l'esecuzione richiama CI e scansione dei segreti, verifica entrambe le immagini e pubblica in GHCR il manifest del tag con `linux/amd64` e `linux/arm64`, senza tag `latest`. Fallisce se una pubblicazione avviene con controlli falliti o se il manifest non contiene entrambe le piattaforme. Non automatizzabile: la pubblicazione si osserva soltanto eseguendo il workflow su GitHub con un tag di release e i permessi del registro GHCR.
 
 #### Metadata
   * type: inspection-verification
@@ -100,18 +69,19 @@ Il controllo passa se il workflow si attiva solo per i tag `vMAJOR.MINOR.PATCH`,
   * verify: [Pubblicazione dell'immagine Docker](../Requirements/WebConversation.md#pubblicazione-dellimmagine-docker)
 ---
 
-### Controllo della scansione dei segreti in CI
+### Controllo delle esecuzioni di CI e scansione dei segreti su GitHub
 
-Esaminare `.github/workflows/secret-scan.yml` ed eseguirlo su GitHub dopo un push.
+Dopo un push sul branch principale, consultare su GitHub le esecuzioni di `.github/workflows/ci.yml` e `.github/workflows/secret-scan.yml` per il commit.
 
 #### Details
-Il controllo passa se il workflow si attiva su push di qualunque branch, pull request, richiesta manuale e chiamata da altri workflow; recupera l'intera storia con il checkout fissato e senza credenziali persistenti; scarica gitleaks v8.30.1, ne verifica lo SHA-256 prima dell'estrazione e interrompe il job se l'impronta non corrisponde; esegue `gitleaks git --redact --no-banner --exit-code 1 .`; e l'esecuzione su GitHub termina con successo sulla storia corrente. Fallisce se una di queste condizioni manca o se l'output riporta il valore di un segreto. Non automatizzabile: l'esito dipende dall'esecuzione del workflow sui runner di GitHub sull'intera storia del repository remoto.
+Il controllo passa se entrambe le esecuzioni terminano con successo sul commit, la scansione esamina l'intera storia del repository remoto e i log non riportano il valore di un segreto. Fallisce se un'esecuzione manca, fallisce o riporta il valore di un segreto. Non automatizzabile: l'esito dipende dall'esecuzione dei workflow sui runner di GitHub e dall'intera storia del repository remoto, che i test locali non riproducono.
 
 #### Metadata
   * type: inspection-verification
 
 #### Relations
   * derivedFrom: [Verifica del client web](#verifica-del-client-web)
+  * verify: [Controlli CI del client web](../Requirements/WebConversation.md#controlli-ci-del-client-web)
   * verify: [Scansione dei segreti nella CI](../Requirements/WebConversation.md#scansione-dei-segreti-nella-ci)
 ---
 
@@ -147,10 +117,10 @@ L'ispezione passa se il ruleset corrisponde al contratto: applicazione attiva su
 
 ### Ispezione della sicurezza dei workflow GitHub Actions
 
-Esaminare `.github/workflows/ci.yml`, `.github/workflows/secret-scan.yml` e `.github/workflows/publish-image.yml` e confrontarli con il profilo di sicurezza dei workflow; per ogni azione fissata, controllare che lo SHA corrisponda alla release indicata nel commento nel repository ufficiale dell'azione.
+Per ogni azione fissata nel profilo di sicurezza dei workflow, consultare il repository ufficiale dell'azione; per ogni permesso concesso dal profilo, leggere i passi del job che lo riceve.
 
 #### Details
-L'ispezione passa se permessi, azioni fissate, `timeout-minutes`, `persist-credentials: false`, gestione delle credenziali di GHCR, `workflow_call` e `concurrency` corrispondono al profilo e ogni SHA appartiene alla release indicata. Fallisce se un job riceve un permesso non previsto, un'azione è indicata con un tag o un branch, un job non ha limite di durata o un checkout conserva le credenziali. Non automatizzabile: stabilire che un permesso sia necessario al job e che lo SHA fissato corrisponda alla release ufficiale dell'azione richiede di leggere il workflow e la fonte dell'azione.
+L'ispezione passa se ogni SHA fissato appartiene alla release indicata nel commento nel repository ufficiale dell'azione e ogni permesso del profilo è necessario al job che lo riceve. Fallisce se uno SHA non appartiene alla release indicata o se un job riceve un permesso che i suoi passi non usano. Non automatizzabile: la corrispondenza fra SHA e release si legge nel repository dell'azione su GitHub, fuori dal repository e dalla CI, e stabilire che un permesso sia necessario richiede di leggere i passi del job e la documentazione dell'azione.
 
 #### Metadata
   * type: inspection-verification
@@ -190,6 +160,22 @@ L'ispezione passa se il contratto afferma soltanto la decisione del proprio requ
   * verify: [Dipendenze fra contratti dichiarate come riferimenti](../Requirements/WebConversation.md#dipendenze-fra-contratti-dichiarate-come-riferimenti)
 ---
 
+### Prova del profilo di sicurezza dei workflow
+
+Leggere come testo `.github/workflows/ci.yml`, `.github/workflows/secret-scan.yml` e `.github/workflows/publish-image.yml` e confrontarli con il profilo di sicurezza dei workflow GitHub Actions letto dal modello.
+
+#### Details
+La prova passa se ogni workflow dichiara al primo livello soltanto `permissions: contents: read`; soltanto il job `publish` dichiara permessi propri, `contents: read` e `packages: write`, e nessun altro permesso di scrittura compare; ogni azione esterna è indicata con lo SHA completo e il commento di versione elencati nel profilo; `actions/setup-node` ha `package-manager-cache: false`; ogni job eseguito su un runner usa `ubuntu-24.04` e ha `timeout-minutes` uguale a 15 per `checks`, 10 per `gitleaks` e 45 per `publish`; ogni `actions/checkout` ha `persist-credentials: false`; `GITHUB_TOKEN` arriva a `docker login` soltanto tramite variabile d'ambiente e `--password-stdin` e nessuno script interpola segreti; `docker logout ghcr.io` ha `if: always()`; `ci.yml` e `secret-scan.yml` dichiarano `workflow_call` e `publish-image.yml` li richiama nei job `checks` e `secret-scan`; `concurrency` ha gruppo `web-release-${{ github.ref }}` e `cancel-in-progress: false`. Fallisce se un job riceve un permesso non previsto dal profilo, se un'azione è indicata con un tag, un branch o uno SHA diverso dal profilo, se un job non ha limite di durata o se un checkout conserva le credenziali.
+
+#### Metadata
+  * type: test-verification
+
+#### Relations
+  * derivedFrom: [Verifica del client web](#verifica-del-client-web)
+  * satisfiedBy: [workflow-security.test.ts](../../test/repository/workflow-security.test.ts)
+  * verify: [Privilegi minimi dei workflow GitHub Actions](../Requirements/WebConversation.md#privilegi-minimi-dei-workflow-github-actions)
+---
+
 ### Prova del protocollo del client web
 
 Contro un backend simulato con `ws`, inviare un nuovo turno e uno di continuazione, due turni contemporanei in conversazioni diverse, un testo vuoto, uno di soli spazi e uno oltre 64 KiB; far rispondere il backend con frammenti e `turn.completed`, con `turn.rejected`, con `turn.failed` dopo frammenti, con `turn.interrupted`, con `session.error`, chiudendo la sessione prima dell'esito, senza `session.ready` e con un messaggio non legato a un turno che contiene `id`.
@@ -212,6 +198,54 @@ La prova passa se i messaggi inviati seguono il contratto della sessione, la ses
   * verify: [Segnalazione locale dell'interruzione della chat](../Requirements/WebConversation.md#segnalazione-locale-dellinterruzione-della-chat)
 ---
 
+### Prova del workflow CI del client web
+
+Leggere come testo `.github/workflows/ci.yml` ed esaminarne attivazioni, job e passi.
+
+#### Details
+La prova passa se il workflow si attiva su push del branch principale, pull request, richiesta manuale e chiamata da altri workflow; il job `checks`, chiamato `Web client checks`, imposta Node.js 24, installa pnpm con `npm install --global pnpm@12.11.2`, installa gitleaks con le stesse variabili e gli stessi comandi, verifica SHA-256 compresa, di `.github/workflows/secret-scan.yml`, installa le dipendenze con `pnpm install --frozen-lockfile` e poi esegue in quest'ordine Reqvire 1.3.2 `validate`, `lint --json` controllato con `jq -e '.auto_fixable == [] and .needs_manual_review == []'`, `node scripts/check-model.mjs`, `pnpm typecheck`, `pnpm test` e `pnpm build`; nessun passo ha `continue-on-error`, condizioni `if` o `|| true`, e ogni script su più righe inizia con `set -euo pipefail`. Fallisce se manca una fase, se l'ordine differisce o se un controllo fallito non fa fallire il job.
+
+#### Metadata
+  * type: test-verification
+
+#### Relations
+  * derivedFrom: [Verifica del client web](#verifica-del-client-web)
+  * satisfiedBy: [ci-workflow.test.ts](../../test/repository/ci-workflow.test.ts)
+  * verify: [Controlli CI del client web](../Requirements/WebConversation.md#controlli-ci-del-client-web)
+---
+
+### Prova del workflow di pubblicazione dell'immagine
+
+Leggere come testo `.github/workflows/publish-image.yml` ed esaminarne attivazione, controllo della versione, dipendenze fra job e ordine di costruzione, verifica e push; applicare l'espressione regolare del workflow a tag validi e non validi.
+
+#### Details
+La prova passa se il workflow si attiva soltanto al push di tag `v*` e la sua espressione regolare accetta soltanto `vMAJOR.MINOR.PATCH` senza zeri iniziali; la versione di `package.json` viene confrontata con il tag; i job `checks` e `secret-scan` richiamano `ci.yml` e `secret-scan.yml` e il job `publish` dipende da entrambi; il passo di build costruisce le immagini `linux/amd64` e `linux/arm64` ed esegue `scripts/verify-docker-image.mjs` su ciascuna senza alcun push, e i `docker push` compaiono soltanto nei passi successivi; le immagini ricevono i tag `<tag>-amd64` e `<tag>-arm64` di `ghcr.io/ambrogio-app/ambrogio-web`, il manifest del tag di release le riunisce e viene controllato che contenga esattamente le due piattaforme; il workflow non contiene `latest`. Fallisce se un push precede la verifica di entrambe le immagini, se la pubblicazione non dipende da CI e scansione dei segreti o se compare il tag `latest`.
+
+#### Metadata
+  * type: test-verification
+
+#### Relations
+  * derivedFrom: [Verifica del client web](#verifica-del-client-web)
+  * satisfiedBy: [publish-workflow.test.ts](../../test/repository/publish-workflow.test.ts)
+  * verify: [Pubblicazione dell'immagine Docker](../Requirements/WebConversation.md#pubblicazione-dellimmagine-docker)
+---
+
+### Prova del workflow di scansione dei segreti
+
+Leggere come testo `.github/workflows/secret-scan.yml` ed esaminarne attivazioni, checkout, installazione di gitleaks e scansione; eseguire il comando di scansione del workflow in un repository Git temporaneo, con una storia che contiene un token fittizio costruito durante la prova e con una storia priva di segreti.
+
+#### Details
+La prova passa se il workflow si attiva su push di qualunque branch, pull request, richiesta manuale e chiamata da altri workflow; il job `gitleaks`, chiamato `Gitleaks`, recupera l'intera storia con `fetch-depth: 0` e `persist-credentials: false`; versione, archivio e SHA-256 di gitleaks corrispondono al profilo di scansione dei segreti, l'archivio si scarica dalla release ufficiale, `sha256sum --check --strict` precede l'estrazione e lo script inizia con `set -euo pipefail`; la scansione esegue `gitleaks git --redact --no-banner --exit-code 1 .`; quel comando termina con stato 1 sulla storia con il token, senza riportarne il valore, e con stato 0 sulla storia pulita. Il repository temporaneo viene eliminato dopo la prova. Fallisce se una di queste condizioni manca, se gitleaks non è disponibile o se l'output riporta il valore del token.
+
+#### Metadata
+  * type: test-verification
+
+#### Relations
+  * derivedFrom: [Verifica del client web](#verifica-del-client-web)
+  * satisfiedBy: [secret-scan-workflow.test.ts](../../test/repository/secret-scan-workflow.test.ts)
+  * verify: [Scansione dei segreti nella CI](../Requirements/WebConversation.md#scansione-dei-segreti-nella-ci)
+---
+
 ### Prova dell'accessibilità di base
 
 In jsdom con Testing Library, individuare regioni, elenco delle conversazioni, comandi e campo di scrittura tramite ruoli e nomi accessibili nelle due lingue; usare la pagina soltanto da tastiera per creare una chat, inviare un turno, aprire una conversazione e caricare la pagina successiva; osservare la regione `aria-live` durante e dopo un turno; sotto i 720 pixel aprire il pannello, chiuderlo con `Esc` e osservare il focus.
@@ -226,6 +260,22 @@ La prova passa se ogni comando e il campo di scrittura hanno un nome accessibile
   * derivedFrom: [Verifica del client web](#verifica-del-client-web)
   * satisfiedBy: [accessibility.test.tsx](../../test/app/accessibility.test.tsx)
   * verify: [Accessibilità di base dell'interfaccia](../Requirements/WebConversation.md#accessibilità-di-base-dellinterfaccia)
+---
+
+### Prova dell'hook pre-commit dei segreti
+
+In un repository Git temporaneo con `.githooks/pre-commit` attivato tramite `core.hooksPath`, mettere in staging un file con un token fittizio costruito durante la prova e tentare il commit; ripetere con un file privo di segreti e con un `PATH` che contiene soltanto `git`, senza `gitleaks`.
+
+#### Details
+La prova passa se il commit con il token fittizio viene rifiutato e l'output non ne riporta il valore, il commit senza segreti riesce e, senza `gitleaks` nel `PATH`, il commit viene rifiutato con un messaggio che indica come installare gitleaks 8.30.1. Il repository temporaneo viene eliminato dopo la prova. Fallisce se uno dei tre esiti differisce o se gitleaks non è disponibile per la prova.
+
+#### Metadata
+  * type: test-verification
+
+#### Relations
+  * derivedFrom: [Verifica del client web](#verifica-del-client-web)
+  * satisfiedBy: [pre-commit-hook.test.ts](../../test/repository/pre-commit-hook.test.ts)
+  * verify: [Controllo dei segreti prima del commit](../Requirements/WebConversation.md#controllo-dei-segreti-prima-del-commit)
 ---
 
 ### Prova dell'identità del browser nella sessione
@@ -376,6 +426,38 @@ La prova passa se la schermata rispetta il contratto: anteprime di 60 caratteri 
   * verify: [Vista a due aree della conversazione](../Requirements/WebConversation.md#vista-a-due-aree-della-conversazione)
 ---
 
+### Prova delle regole di architettura del client web
+
+Leggere come testo ogni file TypeScript di produzione sotto `src/`, tolti i commenti, ed estrarre con un'espressione regolare gli specificatori di `import … from '…'`, `export … from '…'`, `import '…'` e `import('…')` letterali, dopo aver controllato l'estrazione su un file di esempio; cercare nello stesso testo, tolte anche le stringhe, i riferimenti alle API globali del browser; esaminare inoltre i nomi dei file di `src/` e la struttura di `test/`.
+
+#### Details
+La prova passa se le parti `model/` e il codice di `src/shared/` esterno a `src/shared/ui/` sono file `.ts` che non importano React, parti `ui/` né `src/app/` e non nominano `document`, `window`, `navigator`, `localStorage`, `sessionStorage` o `crypto` se non come proprietà o chiave di un oggetto, né costruiscono `new WebSocket`; nessuna funzionalità importa un'altra funzionalità; soltanto i file di `src/app/` importano più funzionalità; i file TypeScript non React hanno nomi in kebab-case e i componenti in PascalCase, con l'eccezione di `src/app/main.tsx`; i file di test si chiamano `<nome>.test.ts` o `<nome>.test.tsx` e ogni cartella di `test/`, tranne `test/support/` e `test/repository/`, corrisponde a una cartella di `src/`. Fallisce se una di queste regole è violata, se l'estrazione sul file di esempio non restituisce esattamente gli specificatori attesi o se non vengono letti tutti i file TypeScript di `src/`.
+
+#### Metadata
+  * type: test-verification
+
+#### Relations
+  * derivedFrom: [Verifica del client web](#verifica-del-client-web)
+  * satisfiedBy: [architecture.test.ts](../../test/repository/architecture.test.ts)
+  * verify: [Separazione del nucleo dall'interfaccia](../Requirements/WebConversation.md#separazione-del-nucleo-dallinterfaccia)
+---
+
+### Prova delle versioni fissate dello stack
+
+Leggere `package.json`, `tsconfig.json`, `vite.config.ts` e `Dockerfile` e confrontarli con i contratti «Stack e build del client web» e «Profilo di installazione delle dipendenze del client web» letti dal modello.
+
+#### Details
+La prova passa se ogni dipendenza di `package.json` è fissata a una versione esatta `MAJOR.MINOR.PATCH`; `typescript` e `vitest` hanno le versioni indicate nel contratto dello stack e `react` e `react-dom` la versione principale indicata; `react-markdown`, `remark-gfm` e `vite` sono dipendenze del progetto; `packageManager` vale `pnpm@` seguito dalla versione del profilo di installazione; `engines.node` richiede la versione di Node.js del contratto, la stessa della fase di build del `Dockerfile`; TypeScript è in modalità `strict`; lo script `build` è `vite build` con uscita in `dist`; la fase finale del `Dockerfile` parte da `nginxinc/nginx-unprivileged`, copia soltanto `dist` e la configurazione nginx e non dichiara `CMD` né `ENTRYPOINT` propri. Fallisce se una versione non è esatta o differisce dal contratto o se l'esecuzione richiede un processo server proprio.
+
+#### Metadata
+  * type: test-verification
+
+#### Relations
+  * derivedFrom: [Verifica del client web](#verifica-del-client-web)
+  * satisfiedBy: [stack-versions.test.ts](../../test/repository/stack-versions.test.ts)
+  * verify: [Stack del client web](../Requirements/WebConversation.md#stack-del-client-web)
+---
+
 ### Prova di integrazione con il backend fissato
 
 Con un checkout del backend al commit dichiarato nel contratto sorgente, avviare il server conversazionale con un orchestratore controllato e il componente HTTP configurato con un'origine di esempio autorizzata. Usare il nucleo del client web per inviare turni, con esito completato, errore dopo frammenti e interruzione, e per leggere elenco e storico; aprire il canale e leggere l'elenco con l'origine autorizzata e con un'origine non autorizzata.
@@ -392,4 +474,3 @@ La prova passa se il client conversa e consulta tramite le sole interfacce pubbl
   * satisfiedBy: [vitest.backend.config.ts](../../vitest.backend.config.ts)
   * verify: [Client conversazionale nel browser](../Requirements/WebConversation.md#client-conversazionale-nel-browser)
 ---
-

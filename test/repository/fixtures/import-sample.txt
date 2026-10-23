@@ -1,0 +1,22 @@
+// Sample source for the self-check of the textual import extraction.
+// import { commented } from 'line-comment';
+/* import 'block-comment';
+   export * from "block-comment-export"; */
+import { useState } from 'react';
+import type { Result } from '../../../shared/result';
+import Default, {
+  first,
+  second as renamed,
+} from "./multi-line";
+import * as everything from './namespace';
+import './side-effect.css';
+export { value } from './re-export';
+export * from './star-export';
+export type { Shape } from './type-export';
+const later = await import('./dynamic');
+const computed = import(`./template-${later}`);
+const text = "import 'inside-a-string'";
+const url = 'https://example.com/path'; // a comment after a string
+const window = { document: 1 };
+const note = `export * from 'inside-a-template'`;
+export const local = 1;
