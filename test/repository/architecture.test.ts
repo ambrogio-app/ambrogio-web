@@ -1,22 +1,81 @@
-import { readdirSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { basename, dirname, join, relative, resolve, sep } from 'node:path';
-import { SyntaxKind, type Node, type SourceFile } from 'typescript/unstable/ast';
-import { API, type Project } from 'typescript/unstable/sync';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import { repositoryRoot } from '../support/repository-files';
 
-// Browser globals that the core receives as dependencies from src/app/ instead of using directly.
-const browserGlobals = new Set(['document', 'window', 'navigator', 'localStorage', 'sessionStorage',
-  'location', 'history', 'fetch', 'WebSocket', 'crypto']);
+// Browser globals that the core never names: src/app/ provides the browser APIs as dependencies.
+// fetch, history and location are left to the architecture analysis, because telling them apart
+// from project properties and methods with the same name needs the type checker.
+const browserGlobal = /(?<![\w$.])(?:document|window|navigator|localStorage|sessionStorage|crypto)(?![\w$])(?!\s*\??:)/g;
+const webSocketConstruction = /\bnew\s+WebSocket\b/g;
 const reactPackage = /^react(?:$|[-/])/;
+
+/**
+ * Source text without comments, with every string literal replaced by `'§<index>'` and every
+ * template literal by `` `§` ``, so that regular expressions see neither comments nor quoted text.
+ */
+type Scanned = { readonly code: string; readonly strings: readonly string[] };
+
+function scan(source: string): Scanned {
+  const strings: string[] = [];
+  let code = '';
+  let index = 0;
+  const lastSignificant = (): string => code.trimEnd().slice(-1);
+  while (index < source.length) {
+    const char = source[index] ?? '';
+    const next = source[index + 1] ?? '';
+    if (char === '/' && next === '/') {
+      while (index < source.length && source[index] !== '\n') index++;
+    } else if (char === '/' && next === '*') {
+      const close = source.indexOf('*/', index + 2);
+      index = close < 0 ? source.length : close + 2;
+      code += ' ';
+    } else if (char === "'" || char === '"' || char === '`') {
+      let value = '';
+      index++;
+      while (index < source.length && source[index] !== char) {
+        if (source[index] === '\\') { value += source.slice(index, index + 2); index += 2; } else { value += source[index]; index++; }
+      }
+      index++;
+      if (char === '`') code += '`§`';
+      else { code += `'§${strings.length}'`; strings.push(value); }
+    } else if (char === '/' && (lastSignificant() === '' || '(,=:[!&|?{};'.includes(lastSignificant()))) {
+      // A regular expression literal: skip it so that quotes or slashes inside it are not misread.
+      let inClass = false;
+      index++;
+      while (index < source.length && (inClass || source[index] !== '/')) {
+        if (source[index] === '\\') index++;
+        else if (source[index] === '[') inClass = true;
+        else if (source[index] === ']') inClass = false;
+        index++;
+      }
+      index++;
+      while (/[a-z]/.test(source[index] ?? '')) index++;
+      code += '/§/';
+    } else {
+      code += char;
+      index++;
+    }
+  }
+  return { code, strings };
+}
+
+/** Specifiers of import ... from, export ... from, side-effect imports and literal dynamic imports. */
+function specifiers({ code, strings }: Scanned): string[] {
+  const pattern = /\b(?:import|export)\s[^;'`]*?\bfrom\s*'§(\d+)'|\bimport\s*'§(\d+)'|\bimport\s*\(\s*'§(\d+)'\s*\)/g;
+  return [...code.matchAll(pattern)].map(match => strings[Number(match[1] ?? match[2] ?? match[3])] ?? '');
+}
+
+function browserGlobalsIn({ code }: Scanned): string[] {
+  return [...code.matchAll(browserGlobal), ...code.matchAll(webSocketConstruction)].map(match => match[0]);
+}
 
 type ProductionFile = {
   readonly path: string; // relative to the repository, with forward slashes
-  readonly source: SourceFile;
+  readonly scanned: Scanned;
   readonly imports: readonly string[]; // relative imports resolved to repository paths, packages as written
 };
 
-const textOf = (node: Node): string => (node as Node & { text: string }).text;
 const toRepositoryPath = (absolute: string): string => relative(repositoryRoot, absolute).split(sep).join('/');
 const featureOf = (path: string): string | undefined => /^src\/features\/([^/]+)\//.exec(path)?.[1];
 const isCore = (path: string): boolean => /^src\/features\/[^/]+\/model\//.test(path)
@@ -34,35 +93,37 @@ function directoriesUnder(directory: string): string[] {
     .map(entry => toRepositoryPath(join(entry.parentPath, entry.name)));
 }
 
+describe('textual import extraction', () => {
+  const sample = scan(readFileSync(join(repositoryRoot, 'test/repository/fixtures/import-sample.txt'), 'utf8'));
+
+  it('finds exactly the import and export specifiers of the sample file', () => {
+    expect(specifiers(sample)).toEqual([
+      'react', '../../../shared/result', './multi-line', './namespace', './side-effect.css',
+      './re-export', './star-export', './type-export', './dynamic',
+    ]);
+  });
+
+  it('finds browser globals outside comments, strings and object keys of the sample file', () => {
+    expect(browserGlobalsIn(sample)).toEqual(['window']);
+  });
+});
+
 describe('architecture rules of the web client', () => {
-  let api: API;
-  let project: Project;
   let files: ProductionFile[];
 
   beforeAll(() => {
-    api = new API({ cwd: repositoryRoot });
-    const snapshot = api.updateSnapshot({ openProjects: [join(repositoryRoot, 'tsconfig.json')] });
-    const loaded = snapshot.getProject(join(repositoryRoot, 'tsconfig.json'));
-    if (loaded === undefined) throw new Error('tsconfig.json project not loaded');
-    project = loaded;
-    files = project.program.getSourceFileNames()
-      .filter(name => toRepositoryPath(name).startsWith('src/'))
-      .map(name => {
-        const source = project.program.getSourceFile(name);
-        if (source === undefined) throw new Error(`source file not loaded: ${name}`);
-        const imports = source.imports.map(textOf).map(specifier => specifier.startsWith('.')
-          ? toRepositoryPath(resolve(dirname(name), specifier))
-          : specifier);
-        return { path: toRepositoryPath(name), source, imports };
-      });
-  }, 60_000);
+    files = filesUnder('src').filter(path => /\.tsx?$/.test(path)).map(path => {
+      const scanned = scan(readFileSync(join(repositoryRoot, path), 'utf8'));
+      const imports = specifiers(scanned).map(specifier => specifier.startsWith('.')
+        ? toRepositoryPath(resolve(dirname(join(repositoryRoot, path)), specifier))
+        : specifier);
+      return { path, scanned, imports };
+    });
+  });
 
-  afterAll(() => { api?.close(); });
-
-  it('analyses every TypeScript production file of src/', () => {
-    const onDisk = filesUnder('src').filter(path => /\.tsx?$/.test(path)).sort();
-    expect(onDisk.length).toBeGreaterThan(0);
-    expect(files.map(file => file.path).sort()).toEqual(onDisk);
+  it('reads every TypeScript production file of src/ and finds its imports', () => {
+    expect(files.length).toBeGreaterThan(0);
+    expect(files.filter(file => file.path.startsWith('src/app/')).every(file => file.imports.length > 0)).toBe(true);
   });
 
   it('keeps the core free of React, of ui/ parts and of src/app/', () => {
@@ -75,26 +136,9 @@ describe('architecture rules of the web client', () => {
     expect(violations).toEqual([]);
   });
 
-  it('keeps the core from using browser globals, which src/app/ provides as dependencies', () => {
-    const violations: string[] = [];
-    for (const file of files.filter(candidate => isCore(candidate.path))) {
-      const identifiers: Node[] = [];
-      const visit = (node: Node): void => {
-        if (node.kind === SyntaxKind.Identifier && browserGlobals.has(textOf(node))
-          && node.parent.kind !== SyntaxKind.TypeReference) identifiers.push(node);
-        node.forEachChild(visit);
-      };
-      visit(file.source);
-      if (identifiers.length === 0) continue;
-      const symbols = project.checker.getSymbolAtLocation(identifiers);
-      identifiers.forEach((identifier, index) => {
-        const declarations = symbols[index]?.declarations ?? [];
-        // A browser global is declared only by the libraries, never by the project's own files.
-        if (declarations.length > 0 && declarations.every(declaration => declaration.path.includes('/node_modules/'))) {
-          violations.push(`${file.path} uses ${textOf(identifier)}`);
-        }
-      });
-    }
+  it('keeps the core from naming browser globals, which src/app/ provides as dependencies', () => {
+    const violations = files.filter(file => isCore(file.path))
+      .flatMap(file => browserGlobalsIn(file.scanned).map(name => `${file.path} uses ${name}`));
     expect(violations).toEqual([]);
   });
 

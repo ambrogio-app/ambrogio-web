@@ -10,10 +10,10 @@ Raggruppa le prove del comportamento del client web, della sua integrazione con 
 
 ### Analisi dell'architettura del client web
 
-Esaminare le parti `model/` delle funzionalità e il codice non React di `src/shared/`: le funzioni che calcolano lo stato e le firme delle operazioni con esiti negativi previsti.
+Esaminare le parti `model/` delle funzionalità e il codice non React di `src/shared/`: le funzioni che calcolano lo stato, le firme delle operazioni con esiti negativi previsti e l'uso delle API del browser `fetch`, `history` e `location`.
 
 #### Details
-L'analisi passa se lo stato di ogni funzionalità è un reducer puro nella sua parte `model/`, senza effetti né letture di stato esterno, e le operazioni con esiti negativi previsti dal contratto restituiscono `Result` con varianti distinte da `kind`, riservando le eccezioni ai guasti inattesi. Fallisce se un reducer produce effetti o se un esito negativo previsto è segnalato con un'eccezione. Non automatizzabile: stabilire che un reducer sia puro e che ogni esito negativo previsto sia un `Result` richiede di leggere il codice e i contratti; import, riferimenti alle API del browser, nomi dei file e struttura dei test sono coperti dalla prova delle regole di architettura.
+L'analisi passa se lo stato di ogni funzionalità è un reducer puro nella sua parte `model/`, senza effetti né letture di stato esterno, le operazioni con esiti negativi previsti dal contratto restituiscono `Result` con varianti distinte da `kind`, riservando le eccezioni ai guasti inattesi, e il nucleo riceve `fetch` e la cronologia e l'indirizzo della pagina come dipendenze da `src/app/`, senza usare le globali `fetch`, `history` e `location`. Fallisce se un reducer produce effetti, se un esito negativo previsto è segnalato con un'eccezione o se il nucleo usa una di quelle globali. Non automatizzabile: stabilire che un reducer sia puro e che ogni esito negativo previsto sia un `Result` richiede di leggere il codice e i contratti, e distinguere nel testo le globali `fetch`, `history` e `location` da proprietà e metodi omonimi del progetto richiede il controllo dei tipi; import, `document`, `window` e le altre API del browser, nomi dei file e struttura dei test sono coperti dalla prova delle regole di architettura.
 
 #### Metadata
   * type: analysis-verification
@@ -428,10 +428,10 @@ La prova passa se la schermata rispetta il contratto: anteprime di 60 caratteri 
 
 ### Prova delle regole di architettura del client web
 
-Con l'API del compilatore del pacchetto `typescript`, caricare il progetto di `tsconfig.json` e leggere gli import e i riferimenti alle API globali del browser di ogni file di produzione sotto `src/`; esaminare inoltre i nomi dei file di `src/` e la struttura di `test/`.
+Leggere come testo ogni file TypeScript di produzione sotto `src/`, tolti i commenti, ed estrarre con un'espressione regolare gli specificatori di `import … from '…'`, `export … from '…'`, `import '…'` e `import('…')` letterali, dopo aver controllato l'estrazione su un file di esempio; cercare nello stesso testo, tolte anche le stringhe, i riferimenti alle API globali del browser; esaminare inoltre i nomi dei file di `src/` e la struttura di `test/`.
 
 #### Details
-La prova passa se le parti `model/` e il codice di `src/shared/` esterno a `src/shared/ui/` sono file `.ts` che non importano React, parti `ui/` né `src/app/` e non usano come valori `document`, `window`, `navigator`, `localStorage`, `sessionStorage`, `location`, `history`, `fetch`, `WebSocket` o `crypto` del browser; nessuna funzionalità importa un'altra funzionalità; soltanto i file di `src/app/` importano più funzionalità; i file TypeScript non React hanno nomi in kebab-case e i componenti in PascalCase, con l'eccezione di `src/app/main.tsx`; i file di test si chiamano `<nome>.test.ts` o `<nome>.test.tsx` e ogni cartella di `test/`, tranne `test/support/` e `test/repository/`, corrisponde a una cartella di `src/`. Fallisce se una di queste regole è violata o se il progetto TypeScript non contiene i file di `src/`.
+La prova passa se le parti `model/` e il codice di `src/shared/` esterno a `src/shared/ui/` sono file `.ts` che non importano React, parti `ui/` né `src/app/` e non nominano `document`, `window`, `navigator`, `localStorage`, `sessionStorage` o `crypto` se non come proprietà o chiave di un oggetto, né costruiscono `new WebSocket`; nessuna funzionalità importa un'altra funzionalità; soltanto i file di `src/app/` importano più funzionalità; i file TypeScript non React hanno nomi in kebab-case e i componenti in PascalCase, con l'eccezione di `src/app/main.tsx`; i file di test si chiamano `<nome>.test.ts` o `<nome>.test.tsx` e ogni cartella di `test/`, tranne `test/support/` e `test/repository/`, corrisponde a una cartella di `src/`. Fallisce se una di queste regole è violata, se l'estrazione sul file di esempio non restituisce esattamente gli specificatori attesi o se non vengono letti tutti i file TypeScript di `src/`.
 
 #### Metadata
   * type: test-verification
