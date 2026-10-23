@@ -130,6 +130,21 @@ La dimostrazione passa se la persona conversa e consulta le conversazioni dal br
   * verify: [Client conversazionale nel browser](../Requirements/WebConversation.md#client-conversazionale-nel-browser)
 ---
 
+### Ispezione della protezione del merge
+
+Leggere con `gh api repos/<proprietario>/<repository>/rulesets` e con il dettaglio del ruleset `main` le regole attive sul branch principale.
+
+#### Details
+L'ispezione passa se il ruleset corrisponde al contratto: applicazione attiva sul branch predefinito, nessun attore escluso, integrazione solo tramite pull request, controlli richiesti con i nomi del contratto, riscrittura forzata e cancellazione vietate; e se un push diretto sul branch principale viene rifiutato. Fallisce se il ruleset manca, è disattivato, ha attori esclusi o differisce dal contratto. Non automatizzabile: il ruleset è un'impostazione del repository GitHub e non un file del repository, e leggerlo richiede credenziali con accesso amministrativo che la CI non possiede.
+
+#### Metadata
+  * type: inspection-verification
+
+#### Relations
+  * derivedFrom: [Verifica del client web](#verifica-del-client-web)
+  * verify: [Controlli obbligatori prima del merge](../Requirements/WebConversation.md#controlli-obbligatori-prima-del-merge)
+---
+
 ### Ispezione della sicurezza dei workflow GitHub Actions
 
 Esaminare `.github/workflows/ci.yml`, `.github/workflows/secret-scan.yml` e `.github/workflows/publish-image.yml` e confrontarli con il profilo di sicurezza dei workflow; per ogni azione fissata, controllare che lo SHA corrisponda alla release indicata nel commento nel repository ufficiale dell'azione.
@@ -377,3 +392,4 @@ La prova passa se il client conversa e consulta tramite le sole interfacce pubbl
   * satisfiedBy: [vitest.backend.config.ts](../../vitest.backend.config.ts)
   * verify: [Client conversazionale nel browser](../Requirements/WebConversation.md#client-conversazionale-nel-browser)
 ---
+
