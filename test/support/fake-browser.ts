@@ -105,17 +105,23 @@ export class FakeServer {
   respond(url: URL): Response {
     this.requests.push(url.pathname + url.search);
     const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status });
-    if (url.pathname === '/api/conversations') {
+    if (url.pathname === '/api/v1/conversations') {
       const ids = [...this.conversations.keys()];
       const start = Number(url.searchParams.get('cursor') ?? 0);
       const end = start + this.pageSize;
       return json({ items: ids.slice(start, end).map(id => ({ id, lastActivityAt: '2026-10-18T08:00:00.000Z' })),
         nextCursor: end < ids.length ? String(end) : null });
     }
-    const id = decodeURIComponent(url.pathname.replace('/api/conversations/', ''));
-    if (this.unreadable.has(id)) return json({ error: 'Non riesco a completare la risposta.' }, 500);
+    const id = decodeURIComponent(url.pathname.replace('/api/v1/conversations/', ''));
+    const problem = (body: unknown, status: number) => new Response(JSON.stringify(body),
+      { status, headers: { 'Content-Type': 'application/problem+json' } });
+    if (this.unreadable.has(id)) {
+      return problem({ type: 'about:blank', title: 'Internal Server Error', status: 500 }, 500);
+    }
     const turns = this.conversations.get(id);
-    if (!turns) return json({ error: 'Conversazione non trovata.' }, 404);
+    if (!turns) {
+      return problem({ type: '/problems/conversation-not-found', title: 'Conversation not found', status: 404 }, 404);
+    }
     return json({ id, createdAt: '2026-10-18T08:00:00.000Z', lastActivityAt: '2026-10-18T08:00:00.000Z',
       turns: turns.map(turn => ({ acceptedAt: '2026-10-18T08:00:00.000Z', ...turn })) });
   }

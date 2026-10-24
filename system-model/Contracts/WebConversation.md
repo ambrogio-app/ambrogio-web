@@ -64,7 +64,7 @@ La chat corrente compare nel frammento dell'indirizzo della pagina come `#/c/<co
 
 ### Lingue dell'interfaccia del client web
 
-L'interfaccia è disponibile in italiano (`it`) e inglese (`en`); la lingua si sceglie con `language` nella configurazione di esecuzione e, se il campo manca, segue le preferenze del browser con `en` come ripiego. Aggiungere una lingua significa aggiungere un dizionario con tutte le chiavi e il relativo codice tra i valori ammessi di `language`. I messaggi pubblici prodotti dal backend, come rifiuti ed errori dei turni e delle letture HTTP, sono mostrati come ricevuti, nella lingua configurata nel backend. I testi fissi dell'interfaccia sono:
+L'interfaccia è disponibile in italiano (`it`) e inglese (`en`); la lingua si sceglie con `language` nella configurazione di esecuzione e, se il campo manca, segue le preferenze del browser con `en` come ripiego. Aggiungere una lingua significa aggiungere un dizionario con tutte le chiavi e il relativo codice tra i valori ammessi di `language`. I messaggi pubblici prodotti dal backend per rifiuti ed errori dei turni sono mostrati come ricevuti, nella lingua configurata nel backend. Gli errori delle letture dall'API HTTP `v1`, `/api/v1/conversations` e `/api/v1/conversations/<id>`, sono presentati con i testi dell'interfaccia scelti in base al `type` del Problem Details: «Conversazione inesistente» per `/problems/conversation-not-found`, «Errore HTTP del backend», con `<n>` uguale allo stato HTTP, per ogni altro tipo o corpo; `title` e `detail` del backend non sono mostrati. I testi fissi dell'interfaccia sono:
 
 | Chiave | `it` | `en` |
 |---|---|---|
@@ -82,6 +82,8 @@ L'interfaccia è disponibile in italiano (`it`) e inglese (`en`); la lingua si s
 | Messaggio troppo grande | «Messaggio troppo grande (massimo 64 KiB).» | «Message too large (64 KiB at most).» |
 | Backend non raggiungibile | «Impossibile collegarsi al backend.» | «Cannot connect to the backend.» |
 | Errore di protocollo | «Errore del protocollo.» | «Protocol error.» |
+| Conversazione inesistente | «Conversazione non trovata.» | «Conversation not found.» |
+| Errore HTTP del backend | «Il backend ha risposto con un errore (HTTP <n>).» | «The backend answered with an error (HTTP <n>).» |
 | Configurazione non valida | «Configurazione del client web non valida» | «Invalid web client configuration» |
 
 #### Alternative e conseguenze

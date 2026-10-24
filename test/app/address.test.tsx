@@ -21,7 +21,8 @@ describe('chat address', () => {
     expect(named.pushed).toEqual([]);
   });
 
-  it('shows the public message of a missing conversation and keeps the new chat available', async () => {
+  // Verification: Prova della presentazione degli errori HTTP
+  it('shows the text of a missing conversation and keeps the new chat available', async () => {
     const browser = fakeBrowser({ fragment: `#/c/${ids.missing}` });
     const { user } = await renderApp(browser);
     expect(await screen.findByText('Conversazione non trovata.')).toBeTruthy();
@@ -30,11 +31,26 @@ describe('chat address', () => {
     expect(browser.pushed.at(-1)).toBe('');
   });
 
+  // Verification: Prova della presentazione degli errori HTTP
+  it('presents HTTP errors by problem type in the interface language, never the backend texts', async () => {
+    const english = fakeBrowser({ fragment: `#/c/${ids.missing}`,
+      config: { backendUrl: 'https://ambrogio.example.com', language: 'en' } });
+    await renderApp(english);
+    expect(await screen.findByText('Conversation not found.')).toBeTruthy();
+    cleanup();
+    const failing = fakeBrowser({ fragment: `#/c/${ids.stored}` });
+    failing.server.store(ids.stored, { id: 't-1', text: 'Prima', status: 'answered', answer: 'ok' });
+    failing.server.unreadable.add(ids.stored);
+    await renderApp(failing);
+    expect(await screen.findByText('Il backend ha risposto con un errore (HTTP 500).')).toBeTruthy();
+    expect(screen.queryByText(/Internal Server Error/)).toBeNull();
+  });
+
   it('ignores a fragment of another form', async () => {
     const browser = fakeBrowser({ fragment: '#/c/not-a-conversation' });
     await renderApp(browser);
     expect(currentEntry()?.textContent).toBe('Nuova chat');
-    expect(browser.server.requests).toEqual(['/api/conversations']);
+    expect(browser.server.requests).toEqual(['/api/v1/conversations']);
   });
 
   it('updates the fragment when a chat is opened or accepted and follows the history', async () => {

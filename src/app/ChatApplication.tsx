@@ -33,7 +33,8 @@ function readFailureMessage(failure: ReadFailure, t: Dictionary): string {
   switch (failure.kind) {
     case 'unreachable': return t.backendUnreachable;
     case 'invalid-response': return t.protocolError;
-    case 'http-error': return failure.message ?? t.protocolError;
+    case 'http-error': return failure.type === '/problems/conversation-not-found'
+      ? t.conversationNotFound : t.httpError(failure.status);
   }
 }
 

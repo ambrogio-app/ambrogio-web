@@ -23,7 +23,8 @@ export type Conversation = {
 export type ReadFailure =
   | { readonly kind: 'unreachable' }
   | { readonly kind: 'invalid-response' }
-  | { readonly kind: 'http-error'; readonly status: number; readonly message: string | null };
+  /** An error answer: `type` is the Problem Details discriminant, null when the body is not a problem. */
+  | { readonly kind: 'http-error'; readonly status: number; readonly type: string | null };
 
 export type FetchJson = (url: URL, init: RequestInit) => Promise<Response>;
 
@@ -77,18 +78,25 @@ function parseConversation(value: unknown): Conversation | null {
   return { id: body.id, createdAt: body.createdAt, lastActivityAt: body.lastActivityAt, turns };
 }
 
-/** Public HTTP consultation routes of the backend. */
+/** The `type` of a Problem Details answer; title and detail are never read. */
+function problemType(response: Response, body: unknown): string | null {
+  const mediaType = response.headers.get('content-type')?.split(';')[0]?.trim().toLowerCase();
+  const type = fields(body)?.type;
+  return mediaType === 'application/problem+json' && text(type) ? type : null;
+}
+
+/** Public HTTP consultation routes of HTTP API v1 of the backend. */
 export class ConversationsApi {
   constructor(private readonly base: URL, private readonly fetchJson: FetchJson) {}
 
   async list(cursor?: string): Promise<Result<ConversationPage, ReadFailure>> {
-    const url = new URL('api/conversations', this.base);
+    const url = new URL('api/v1/conversations', this.base);
     if (cursor !== undefined) url.searchParams.set('cursor', cursor);
     return this.read(url, parsePage);
   }
 
   async history(conversationId: string): Promise<Result<Conversation, ReadFailure>> {
-    return this.read(new URL(`api/conversations/${encodeURIComponent(conversationId)}`, this.base), parseConversation);
+    return this.read(new URL(`api/v1/conversations/${encodeURIComponent(conversationId)}`, this.base), parseConversation);
   }
 
   private async read<T>(url: URL, parse: (value: unknown) => T | null): Promise<Result<T, ReadFailure>> {
@@ -101,8 +109,8 @@ export class ConversationsApi {
     let body: unknown;
     try { body = await response.json(); } catch { body = undefined; }
     if (!response.ok) {
-      const message = fields(body)?.error;
-      return err({ kind: 'http-error', status: response.status, message: text(message) ? message : null });
+      const type = problemType(response, body);
+      return err({ kind: 'http-error', status: response.status, type });
     }
     const parsed = parse(body);
     return parsed === null ? err({ kind: 'invalid-response' }) : ok(parsed);

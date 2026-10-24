@@ -14,6 +14,10 @@ describe('dictionaries', () => {
     expect(dictionaries.it.you).toBe('Tu');
     expect(dictionaries.en.you).toBe('You');
     expect(dictionaries.en.ambrogio).toBe('Ambrogio');
+    expect(dictionaries.it.conversationNotFound).toBe('Conversazione non trovata.');
+    expect(dictionaries.en.conversationNotFound).toBe('Conversation not found.');
+    expect(dictionaries.it.httpError(500)).toBe('Il backend ha risposto con un errore (HTTP 500).');
+    expect(dictionaries.en.httpError(404)).toBe('The backend answered with an error (HTTP 404).');
   });
 });
 
