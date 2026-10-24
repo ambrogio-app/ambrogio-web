@@ -193,7 +193,10 @@ Quando si crea un commit in un clone della chat web con gli hook versionati atti
 
 ### Distribuzione come immagine Docker
 
-Il client web deve essere distribuito come immagine container che serve i file statici dell'applicazione con un processo non privilegiato e riceve la configurazione di esecuzione dall'installazione, senza includerla nell'immagine.
+Il client web deve essere distribuito come immagine container che serve i file statici dell'applicazione con un processo non privilegiato e riceve la configurazione di esecuzione dall'installazione, senza includerla nell'immagine, costruita da un contesto di build che esclude storia Git, dipendenze installate, risultati di build, configurazioni effettive, modello, test e file d'ambiente.
+
+#### Details
+Origine: baseline Reqvire «Configuration and data outside the container image», adottata: la chat web non ha dati persistenti; «Minimal container build context», adattata: il contesto non esclude file di database, che la chat web non produce, ed esclude anche configurazioni effettive, workflow, hook e script del repository.
 
 #### Metadata
   * type: requirement
@@ -268,7 +271,7 @@ Quando la pagina del client web viene aperta, il client deve ricavare l'indirizz
 
 ### Installazione riproducibile delle dipendenze
 
-Quando si installano le dipendenze del client web, in sviluppo, nella CI o nella build dell'immagine, l'installazione deve usare il gestore di pacchetti e il lockfile fissati dal repository senza modificarne le versioni e deve impedire gli script di build delle dipendenze non ammesse esplicitamente.
+Quando si installano le dipendenze del client web, in sviluppo, nella CI o nella build dell'immagine, l'installazione deve usare il gestore di pacchetti e il lockfile fissati dal repository senza modificarne le versioni, con ogni dipendenza diretta dichiarata con una versione esatta, deve impedire gli script di build delle dipendenze non ammesse esplicitamente e deve applicare l'attesa minima di pnpm per le versioni appena pubblicate.
 
 #### Details
 Un lockfile aggiornato durante l'installazione o uno script di build eseguito senza un'ammissione esplicita introducono nel client codice diverso da quello revisionato.
@@ -570,6 +573,9 @@ Quando la sessione conversazionale si chiude prima dell'esito di un turno, oppur
 
 Il client web deve organizzare il codice per funzionalità e mantenere configurazione, identità, sessione conversazionale, consultazione HTTP e stato di ogni funzionalità in parti TypeScript indipendenti da React e dal DOM, usate dai componenti dell'interfaccia senza dipendere da essi.
 
+#### Details
+Origine: baseline Reqvire «No generic sharing packages without a recorded decision», adattata: la regola riguarda le cartelle del client web, che non ha package; `src/shared/` è la cartella comune a più funzionalità registrata in «Architettura del client web».
+
 #### Metadata
   * type: requirement
 
@@ -582,6 +588,9 @@ Il client web deve organizzare il codice per funzionalità e mantenere configura
 ### Stack del client web
 
 Il client web deve essere un'applicazione a pagina singola in TypeScript e React, costruita in file statici, che in esecuzione non richiede un processo server proprio oltre al server dei file statici.
+
+#### Details
+Origine: baseline Reqvire «Strict TypeScript compilation», adottata.
 
 #### Metadata
   * type: requirement

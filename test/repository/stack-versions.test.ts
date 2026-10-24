@@ -59,6 +59,12 @@ describe('pinned stack versions', () => {
     expect(dockerfile).not.toMatch(/npm install --global|npx /);
   });
 
+  it('allows no dependency build script and keeps the pnpm minimum release age without exceptions', () => {
+    const workspace = readRepositoryFile('pnpm-workspace.yaml');
+    expect(/^allowBuilds:\n((?: {2}.+\n)*)/m.exec(workspace)?.[1]).toBe('  fsevents: false\n');
+    expect(workspace).not.toMatch(/^minimumReleaseAge/m);
+  });
+
   it('compiles TypeScript in strict mode', () => {
     const tsconfig = JSON.parse(readRepositoryFile('tsconfig.json')) as { compilerOptions: { strict?: boolean } };
     expect(tsconfig.compilerOptions.strict).toBe(true);

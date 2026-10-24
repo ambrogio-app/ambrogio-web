@@ -353,7 +353,7 @@ La prova passa se senza frammento compare «Nuova chat», un frammento valido ap
 In un checkout pulito, attivare pnpm con Corepack ed eseguire `pnpm install --frozen-lockfile`, come fanno la CI e la fase di build dell'immagine.
 
 #### Details
-La prova passa se l'installazione termina senza errori, `pnpm-lock.yaml` resta invariato, `package-lock.json` non esiste, `packageManager` vale `pnpm@12.11.2` nessuna dipendenza esegue script di build fuori da `allowBuilds`, e se la fase `build` del `Dockerfile` dichiara `ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0` ed esegue `corepack enable` prima della copia del manifest e dell'installazione, senza `npm install --global` né `npx`. Fallisce se il lockfile non corrisponde a `package.json`, se l'installazione lo modifica o se uno script di build di una dipendenza non ammessa viene eseguito.
+La prova passa se l'installazione termina senza errori, `pnpm-lock.yaml` resta invariato, `package-lock.json` non esiste, `packageManager` vale `pnpm@12.11.2`, ogni dipendenza diretta ha una versione esatta, `allowBuilds` dichiara soltanto `fsevents` con `false`, `pnpm-workspace.yaml` non imposta `minimumReleaseAge` né eccezioni all'attesa, nessuna dipendenza esegue script di build fuori da `allowBuilds`, e se la fase `build` del `Dockerfile` dichiara `ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0` ed esegue `corepack enable` prima della copia del manifest e dell'installazione, senza `npm install --global` né `npx`. Fallisce se il lockfile non corrisponde a `package.json`, se l'installazione lo modifica o se uno script di build di una dipendenza non ammessa viene eseguito.
 
 #### Metadata
   * type: test-verification
