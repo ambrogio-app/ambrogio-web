@@ -15,5 +15,7 @@ export const en: Dictionary = {
   messageTooLarge: 'Message too large (64 KiB at most).',
   backendUnreachable: 'Cannot connect to the backend.',
   protocolError: 'Protocol error.',
+  conversationNotFound: 'Conversation not found.',
+  httpError: status => `The backend answered with an error (HTTP ${status}).`,
   invalidConfiguration: 'Invalid web client configuration',
 };

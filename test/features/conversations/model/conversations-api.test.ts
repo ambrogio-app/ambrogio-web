@@ -8,6 +8,7 @@ function json(body: unknown, status = 200) {
 }
 
 describe('ConversationsApi', () => {
+  // Verification: Prova della presentazione degli errori HTTP
   it('reads the first page and the next one through the opaque cursor', async () => {
     const fetchJson = vi.fn(async (_url: URL, _init: RequestInit) => json({ items: [{ id: 'c-1', lastActivityAt: '2026-10-18T08:00:00.000Z' }],
       nextCursor: 'opaque' }));
@@ -16,8 +17,8 @@ describe('ConversationsApi', () => {
       nextCursor: 'opaque' } });
     await api.list('opaque');
     expect(fetchJson.mock.calls.map(call => String(call[0]))).toEqual([
-      'https://ambrogio.example.com/base/api/conversations',
-      'https://ambrogio.example.com/base/api/conversations?cursor=opaque',
+      'https://ambrogio.example.com/base/api/v1/conversations',
+      'https://ambrogio.example.com/base/api/v1/conversations?cursor=opaque',
     ]);
   });
 
@@ -30,13 +31,24 @@ describe('ConversationsApi', () => {
     ] };
     const fetchJson = vi.fn(async (_url: URL, _init: RequestInit) => json(history));
     expect(await new ConversationsApi(base, fetchJson).history('c-1')).toEqual({ ok: true, value: history });
-    expect(String(fetchJson.mock.calls[0]![0])).toBe('https://ambrogio.example.com/base/api/conversations/c-1');
+    expect(String(fetchJson.mock.calls[0]![0])).toBe('https://ambrogio.example.com/base/api/v1/conversations/c-1');
   });
 
-  it('returns the public message of HTTP errors', async () => {
-    const api = new ConversationsApi(base, async () => json({ error: 'Conversazione non trovata.' }, 404));
-    expect(await api.history('missing')).toEqual({ ok: false,
-      error: { kind: 'http-error', status: 404, message: 'Conversazione non trovata.' } });
+  // Verification: Prova della presentazione degli errori HTTP
+  it('returns only the Problem Details type of HTTP errors', async () => {
+    const problem = (body: unknown, status: number) => new Response(JSON.stringify(body),
+      { status, headers: { 'Content-Type': 'application/problem+json; charset=utf-8' } });
+    const missing = new ConversationsApi(base, async () => problem({ type: '/problems/conversation-not-found',
+      title: 'TITLE_MARKER', status: 404, detail: 'DETAIL_MARKER' }, 404));
+    expect(await missing.history('missing')).toEqual({ ok: false,
+      error: { kind: 'http-error', status: 404, type: '/problems/conversation-not-found' } });
+    const blank = new ConversationsApi(base, async () => problem({ type: 'about:blank', title: 'Internal Server Error',
+      status: 500 }, 500));
+    expect(await blank.list()).toEqual({ ok: false, error: { kind: 'http-error', status: 500, type: 'about:blank' } });
+    const plain = new ConversationsApi(base, async () => json({ type: '/problems/conversation-not-found' }, 404));
+    expect(await plain.history('x')).toEqual({ ok: false, error: { kind: 'http-error', status: 404, type: null } });
+    const previous = new ConversationsApi(base, async () => json({ error: 'Conversazione non trovata.' }, 404));
+    expect(await previous.history('x')).toEqual({ ok: false, error: { kind: 'http-error', status: 404, type: null } });
   });
 
   it('distinguishes an unreachable backend from an invalid response', async () => {

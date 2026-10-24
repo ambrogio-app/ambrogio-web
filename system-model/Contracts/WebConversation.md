@@ -64,7 +64,7 @@ La chat corrente compare nel frammento dell'indirizzo della pagina come `#/c/<co
 
 ### Lingue dell'interfaccia del client web
 
-L'interfaccia è disponibile in italiano (`it`) e inglese (`en`); la lingua si sceglie con `language` nella configurazione di esecuzione e, se il campo manca, segue le preferenze del browser con `en` come ripiego. Aggiungere una lingua significa aggiungere un dizionario con tutte le chiavi e il relativo codice tra i valori ammessi di `language`. I messaggi pubblici prodotti dal backend, come rifiuti ed errori dei turni e delle letture HTTP, sono mostrati come ricevuti, nella lingua configurata nel backend. I testi fissi dell'interfaccia sono:
+L'interfaccia è disponibile in italiano (`it`) e inglese (`en`); la lingua si sceglie con `language` nella configurazione di esecuzione e, se il campo manca, segue le preferenze del browser con `en` come ripiego. Aggiungere una lingua significa aggiungere un dizionario con tutte le chiavi e il relativo codice tra i valori ammessi di `language`. I messaggi pubblici prodotti dal backend per rifiuti ed errori dei turni sono mostrati come ricevuti, nella lingua configurata nel backend. Gli errori delle letture dall'API HTTP `v1`, `/api/v1/conversations` e `/api/v1/conversations/<id>`, sono presentati con i testi dell'interfaccia scelti in base al `type` del Problem Details: «Conversazione inesistente» per `/problems/conversation-not-found`, «Errore HTTP del backend», con `<n>` uguale allo stato HTTP, per ogni altro tipo o corpo; `title` e `detail` del backend non sono mostrati. I testi fissi dell'interfaccia sono:
 
 | Chiave | `it` | `en` |
 |---|---|---|
@@ -82,6 +82,8 @@ L'interfaccia è disponibile in italiano (`it`) e inglese (`en`); la lingua si s
 | Messaggio troppo grande | «Messaggio troppo grande (massimo 64 KiB).» | «Message too large (64 KiB at most).» |
 | Backend non raggiungibile | «Impossibile collegarsi al backend.» | «Cannot connect to the backend.» |
 | Errore di protocollo | «Errore del protocollo.» | «Protocol error.» |
+| Conversazione inesistente | «Conversazione non trovata.» | «Conversation not found.» |
+| Errore HTTP del backend | «Il backend ha risposto con un errore (HTTP <n>).» | «The backend answered with an error (HTTP <n>).» |
 | Configurazione non valida | «Configurazione del client web non valida» | «Invalid web client configuration» |
 
 #### Alternative e conseguenze
@@ -140,7 +142,7 @@ Sono state considerate una conformità formale WCAG 2.2 AA, verificata con strum
 
 ### Profilo di installazione delle dipendenze del client web
 
-Il gestore di pacchetti è pnpm 12.11.2, dichiarato nel campo `packageManager` di `package.json`; il lockfile è `pnpm-lock.yaml` e il repository non contiene `package-lock.json`. Sviluppo, CI e build dell'immagine installano le dipendenze con `pnpm install --frozen-lockfile`, che fallisce se il lockfile non corrisponde a `package.json`; la CI e la fase di build dell'immagine installano pnpm 12.11.2 con `npm install --global pnpm@12.11.2`. La regola predefinita di pnpm che attende 24 ore dalla pubblicazione prima di installare una nuova versione resta attiva e `pnpm-workspace.yaml` non dichiara eccezioni. `allowBuilds` in `pnpm-workspace.yaml` non ammette script di build per alcuna dipendenza: l'unica dipendenza con uno script di installazione è `fsevents`, dipendenza facoltativa di Vite installata soltanto su macOS che contiene il binario precompilato, ed è dichiarata con `false` così che il suo script non venga eseguito. Gli script del progetto si eseguono con `pnpm <script>`.
+Il gestore di pacchetti è pnpm 12.11.2, dichiarato nel campo `packageManager` di `package.json`; il lockfile è `pnpm-lock.yaml` e il repository non contiene `package-lock.json`. Ogni dipendenza diretta di `package.json`, di esecuzione e di sviluppo, è dichiarata con la versione esatta `MAJOR.MINOR.PATCH` risolta nel lockfile. Sviluppo, CI e build dell'immagine installano le dipendenze con `pnpm install --frozen-lockfile`, che fallisce se il lockfile non corrisponde a `package.json`; la CI e la fase di build dell'immagine attivano pnpm con Corepack secondo «Profilo di installazione con pnpm e Corepack»: il job `checks` di `ci.yml` dichiara `COREPACK_ENABLE_DOWNLOAD_PROMPT: '0'` ed esegue `corepack enable` prima di ogni comando `pnpm`, e la fase `build` del `Dockerfile`, basata su `node:24`, esegue `corepack enable` prima di copiare il manifest. La regola predefinita di pnpm che attende 24 ore dalla pubblicazione prima di installare una nuova versione resta attiva e `pnpm-workspace.yaml` non dichiara eccezioni. `allowBuilds` in `pnpm-workspace.yaml` non ammette script di build per alcuna dipendenza: l'unica dipendenza con uno script di installazione è `fsevents`, dipendenza facoltativa di Vite installata soltanto su macOS che contiene il binario precompilato, ed è dichiarata con `false` così che il suo script non venga eseguito. Gli script del progetto si eseguono con `pnpm <script>`.
 
 #### Metadata
   * type: specification
@@ -151,7 +153,7 @@ Il gestore di pacchetti è pnpm 12.11.2, dichiarato nel campo `packageManager` d
 
 ### Profilo di pubblicazione dell'immagine Docker del client web
 
-GitHub Actions pubblica `ghcr.io/ambrogio-app/ambrogio-web` al push di un tag `vMAJOR.MINOR.PATCH`, con versione uguale a quella di `package.json`. Il tag immagine finale coincide con il tag Git; non esiste `latest`. Prima della pubblicazione si eseguono sullo stesso commit la CI e la scansione dei segreti, poi si costruiscono dal `Dockerfile` e si verificano le immagini `linux/amd64` e `linux/arm64` con `scripts/verify-docker-image.mjs`; l'immagine `linux/arm64` si costruisce e si verifica con l'emulazione QEMU. Le immagini verificate ricevono i tag tecnici `<tag>-amd64` e `<tag>-arm64` e il tag di release le riunisce in un manifest. Nessun push avviene prima che entrambe le verifiche siano riuscite. Un push ordinario su `main` non pubblica. Il workflow non cambia la visibilità del pacchetto nel registro.
+GitHub Actions pubblica `ghcr.io/ambrogio-app/ambrogio-web` al push di un tag `vMAJOR.MINOR.PATCH`, con versione uguale a quella di `package.json`. Il tag immagine finale coincide con il tag Git; non esiste `latest`. Prima della pubblicazione si eseguono sullo stesso commit la CI e la scansione dei segreti, poi si costruiscono dal `Dockerfile` e si verificano le immagini `linux/amd64` e `linux/arm64` con `scripts/verify-docker-image.mjs`; l'immagine `linux/arm64` si costruisce e si verifica con l'emulazione QEMU. Le immagini verificate ricevono i tag tecnici `<tag>-amd64` e `<tag>-arm64` e il tag di release le riunisce in un manifest. Nessun push avviene prima che entrambe le verifiche siano riuscite. Dopo il push e il controllo del manifest, il job scrive nel riepilogo del job (`$GITHUB_STEP_SUMMARY`) la riga `Published <immagine>` con il riferimento `ghcr.io/ambrogio-app/ambrogio-web:<tag>`. Un push ordinario su `main` non pubblica. Il workflow non cambia la visibilità del pacchetto nel registro.
 
 #### Metadata
   * type: specification

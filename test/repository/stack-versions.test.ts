@@ -46,6 +46,25 @@ describe('pinned stack versions', () => {
     expect(dockerfile).toMatch(new RegExp(`^FROM --platform=\\$BUILDPLATFORM node:${node} AS build$`, 'm'));
   });
 
+  it('activates pnpm through Corepack in the image build stage before installing the frozen dependencies', () => {
+    const build = dockerfile.split(/^(?=FROM )/m).find(stage => / AS build$/m.test(stage)) ?? '';
+    const lines = build.split('\n');
+    const prompt = lines.indexOf('ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0');
+    const enable = lines.indexOf('RUN corepack enable');
+    const manifest = lines.findIndex(line => line.startsWith('COPY package.json'));
+    expect(prompt).toBeGreaterThan(0);
+    expect(prompt).toBeLessThan(enable);
+    expect(enable).toBeLessThan(manifest);
+    expect(manifest).toBeLessThan(lines.indexOf('RUN pnpm install --frozen-lockfile'));
+    expect(dockerfile).not.toMatch(/npm install --global|npx /);
+  });
+
+  it('allows no dependency build script and keeps the pnpm minimum release age without exceptions', () => {
+    const workspace = readRepositoryFile('pnpm-workspace.yaml');
+    expect(/^allowBuilds:\n((?: {2}.+\n)*)/m.exec(workspace)?.[1]).toBe('  fsevents: false\n');
+    expect(workspace).not.toMatch(/^minimumReleaseAge/m);
+  });
+
   it('compiles TypeScript in strict mode', () => {
     const tsconfig = JSON.parse(readRepositoryFile('tsconfig.json')) as { compilerOptions: { strict?: boolean } };
     expect(tsconfig.compilerOptions.strict).toBe(true);

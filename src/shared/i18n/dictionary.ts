@@ -18,6 +18,8 @@ export type Dictionary = {
   readonly messageTooLarge: string;
   readonly backendUnreachable: string;
   readonly protocolError: string;
+  readonly conversationNotFound: string;
+  readonly httpError: (status: number) => string;
   readonly invalidConfiguration: string;
 };
 

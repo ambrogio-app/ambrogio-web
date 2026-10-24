@@ -27,7 +27,7 @@ describe('chat screen', () => {
       answer: 'Domani sole.' });
     act(() => { turn.chunk('sole.').complete(); });
     expect(await screen.findByText('Domani sole.')).toBeTruthy();
-    expect(browser.server.requests).toContain(`/api/conversations/${ids.created}`);
+    expect(browser.server.requests).toContain(`/api/v1/conversations/${ids.created}`);
   });
 
   it('opens a conversation started by another client and continues it', async () => {
@@ -61,8 +61,8 @@ describe('chat screen', () => {
     expect(screen.queryByRole('button', { name: 'Altre conversazioni' })).toBeNull();
 
     await user.click(screen.getByRole('button', { name: 'Aggiorna' }));
-    await waitFor(() => expect(browser.server.requests.filter(path => path === '/api/conversations')).toHaveLength(2));
-    expect(browser.server.requests).toContain('/api/conversations?cursor=2');
+    await waitFor(() => expect(browser.server.requests.filter(path => path === '/api/v1/conversations')).toHaveLength(2));
+    expect(browser.server.requests).toContain('/api/v1/conversations?cursor=2');
   });
 
   it('shows a turn in progress with the invitation to refresh, then its outcome', async () => {

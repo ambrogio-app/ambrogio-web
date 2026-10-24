@@ -3,7 +3,8 @@
 ARG BUILDPLATFORM
 FROM --platform=$BUILDPLATFORM node:24 AS build
 WORKDIR /app
-RUN npm install --global pnpm@12.11.2
+ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+RUN corepack enable
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile
 COPY index.html tsconfig.json vite.config.ts ./

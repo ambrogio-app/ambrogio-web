@@ -26,7 +26,7 @@ The page lists your conversations on the left and shows the open one on the righ
 flowchart LR
     U((You)) --> B[Browser]
     B -- "config.json" --> W[ambrogio-web container]
-    B -- "GET /api/conversations<br/>list and history" --> A[ambrogio-backend]
+    B -- "GET /api/v1/conversations<br/>list and history" --> A[ambrogio-backend]
     B <-- "WebSocket /api/session<br/>ambrogio.v1 turns" --> A
 ```
 

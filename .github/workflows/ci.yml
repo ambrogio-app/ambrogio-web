@@ -19,6 +19,7 @@ jobs:
       BRANCH: ${{ github.head_ref || github.ref_name }}
       GITLEAKS_VERSION: 8.30.1
       GITLEAKS_SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
+      COREPACK_ENABLE_DOWNLOAD_PROMPT: '0'
     steps:
       - name: Check out repository
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
@@ -50,6 +51,10 @@ jobs:
       - name: Check the model of the workspace
         run: workspace/ambrogio-model/scripts/model-checks --workspace workspace
 
+      # From here pnpm runs at the version that the packageManager field of each folder declares.
+      - name: Enable Corepack
+        run: corepack enable
+
       # The integration test starts the backend checked out side by side through its public test entry point.
       - name: Install and build the side-by-side backend
         working-directory: workspace/ambrogio-backend
@@ -57,13 +62,8 @@ jobs:
         run: |
           set -euo pipefail
           git log -1 --format='ambrogio-backend commit: %H' >&2
-          pnpm_version=$(node -p "require('./package.json').packageManager.replace(/^pnpm@/, '')")
-          npx --yes "pnpm@${pnpm_version}" install --frozen-lockfile
-          npx --yes "pnpm@${pnpm_version}" build
-
-      - name: Install pnpm
-        working-directory: workspace/ambrogio-web
-        run: npm install --global pnpm@12.11.2
+          pnpm install --frozen-lockfile
+          pnpm build
 
       # The test suite runs the pre-commit hook and the history scan command with gitleaks.
       - name: Install gitleaks
@@ -81,6 +81,10 @@ jobs:
       - name: Install dependencies
         working-directory: workspace/ambrogio-web
         run: pnpm install --frozen-lockfile
+
+      - name: Audit dependencies
+        working-directory: workspace/ambrogio-web
+        run: pnpm audit --audit-level high
 
       - name: Check TypeScript
         working-directory: workspace/ambrogio-web

@@ -110,5 +110,6 @@ export function runOf(stepText: string): string {
   const value = scalar(stepText, 'run', 8);
   if (value === undefined) return '';
   if (value !== '|') return value;
-  return block(stepText, 'run', 8).split('\n').map(line => line.slice(10)).join('\n').trim();
+  return block(stepText, 'run', 8).split('\n').filter(line => !(indentOf(line) < 10 && line.trimStart().startsWith('#')))
+    .map(line => line.slice(10)).join('\n').trim();
 }

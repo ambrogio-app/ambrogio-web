@@ -115,6 +115,38 @@ L'ispezione passa se le istruzioni della chat web rimandano a `ambrogio-model/AG
   * verify: [Istruzioni per gli agenti della chat web](../Requirements/WebConversation.md#istruzioni-per-gli-agenti-della-chat-web)
 ---
 
+### Prova dei controlli del modello nell'hook pre-commit della chat web
+
+In una cartella temporanea, creare un repository Git con l'hook `.githooks/pre-commit` del repository attivato tramite `core.hooksPath` e, accanto, una cartella `ambrogio-model` con uno script `scripts/model-checks` fittizio che registra la propria esecuzione e termina con esito riuscito oppure con un messaggio e un esito non riuscito; tentare un commit senza segreti con lo script che riesce, con lo script che fallisce, senza la cartella `ambrogio-model` affiancata e con un file che contiene un token fittizio costruito durante la prova.
+
+#### Details
+La prova passa se con lo script che riesce il commit viene creato e lo script risulta eseguito; se con lo script che fallisce il commit viene rifiutato e l'output riporta il messaggio dello script; se senza `ambrogio-model` affiancato il commit viene rifiutato con il messaggio del contratto «Controlli del modello nell'hook pre-commit»; e se il commit con il token viene rifiutato senza eseguire lo script. Fallisce se uno di questi esiti differisce. I controlli reali del modello non vengono eseguiti dalla prova: li esegue la CI con `model-checks`.
+
+#### Metadata
+  * type: test-verification
+
+#### Relations
+  * derivedFrom: [Verifica del client web](#verifica-del-client-web)
+  * satisfiedBy: [pre-commit-hook.test.ts](../../test/repository/pre-commit-hook.test.ts)
+  * verify: [Controlli del modello prima del commit della chat web](../Requirements/WebConversation.md#controlli-del-modello-prima-del-commit-della-chat-web)
+---
+
+### Prova del comando di verifica completo della chat web
+
+Leggere lo script `verify` di `package.json` e i comandi del job `checks` di `.github/workflows/ci.yml`.
+
+#### Details
+La prova passa se lo script esegue, uniti da `&&`, `../ambrogio-model/scripts/model-checks`, `pnpm install --frozen-lockfile`, `pnpm audit --audit-level high`, `(cd ../ambrogio-backend && pnpm install --frozen-lockfile && pnpm build)` e poi gli stessi comandi `pnpm` che il job esegue nella cartella della chat web dopo l'audit, nello stesso ordine; e se `AGENTS.md` cita `pnpm verify`. Fallisce se un controllo della CI manca dallo script, se l'ordine differisce o se i comandi non sono uniti da `&&`.
+
+#### Metadata
+  * type: test-verification
+
+#### Relations
+  * derivedFrom: [Verifica del client web](#verifica-del-client-web)
+  * satisfiedBy: [verify-command.test.ts](../../test/repository/verify-command.test.ts)
+  * verify: [Comando di verifica completo della chat web](../Requirements/WebConversation.md#comando-di-verifica-completo-della-chat-web)
+---
+
 ### Prova del profilo di sicurezza dei workflow
 
 Leggere come testo `.github/workflows/ci.yml`, `.github/workflows/secret-scan.yml` e `.github/workflows/publish-image.yml` e confrontarli con il profilo comune dei workflow GitHub Actions e con il profilo di sicurezza dei workflow GitHub Actions della chat web letti dal modello.
@@ -158,7 +190,7 @@ La prova passa se i messaggi inviati seguono il contratto della sessione, la ses
 Leggere come testo `.github/workflows/ci.yml` ed esaminarne attivazioni, job e passi.
 
 #### Details
-La prova passa se il workflow si attiva su push del branch principale, pull request, richiesta manuale e chiamata da altri workflow; il job `checks`, chiamato `Web client checks`, dichiara `BRANCH` uguale a `${{ github.head_ref || github.ref_name }}`, esegue il checkout del repository in `workspace/ambrogio-web` con `fetch-depth: 0`, imposta Node.js 24, clona `ambrogio-model` in `workspace/ambrogio-model` sul branch `BRANCH` se esiste sul remoto e altrimenti su `main`, esegue `workspace/ambrogio-model/scripts/checkout-workspace workspace "$BRANCH"` e poi `workspace/ambrogio-model/scripts/model-checks --workspace workspace`; nella cartella `workspace/ambrogio-backend` installa le dipendenze del backend con `pnpm install --frozen-lockfile` e lo compila con `pnpm build`, usando tramite `npx` la versione di pnpm dichiarata in `packageManager` del `package.json` del backend; nella cartella `workspace/ambrogio-web` installa pnpm con `npm install --global pnpm@12.11.2`, installa gitleaks con le stesse variabili e gli stessi comandi, verifica SHA-256 compresa, di `.github/workflows/secret-scan.yml`, installa le dipendenze con `pnpm install --frozen-lockfile` e poi esegue in quest'ordine `pnpm typecheck`, `pnpm test`, `pnpm build` e `pnpm test:backend`; nessun passo ha `continue-on-error`, condizioni `if` o `|| true`, nessun passo ripete il numero di versione di Reqvire, e ogni script su più righe inizia con `set -euo pipefail`. Fallisce se manca una fase, se l'ordine differisce o se un controllo fallito non fa fallire il job.
+La prova passa se il workflow si attiva su push del branch principale, pull request, richiesta manuale e chiamata da altri workflow; il job `checks`, chiamato `Web client checks`, dichiara `BRANCH` uguale a `${{ github.head_ref || github.ref_name }}`, esegue il checkout del repository in `workspace/ambrogio-web` con `fetch-depth: 0`, imposta Node.js 24, clona `ambrogio-model` in `workspace/ambrogio-model` sul branch `BRANCH` se esiste sul remoto e altrimenti su `main`, esegue `workspace/ambrogio-model/scripts/checkout-workspace workspace "$BRANCH"` e poi `workspace/ambrogio-model/scripts/model-checks --workspace workspace`; nella cartella `workspace/ambrogio-backend` installa le dipendenze del backend con `pnpm install --frozen-lockfile` e lo compila con `pnpm build`, con il `pnpm` attivato da `corepack enable`, che il job esegue prima e con `COREPACK_ENABLE_DOWNLOAD_PROMPT` uguale a `'0'` a livello di job, senza `npm install --global` né `npx`; nella cartella `workspace/ambrogio-web` installa gitleaks con le stesse variabili e gli stessi comandi, verifica SHA-256 compresa, di `.github/workflows/secret-scan.yml`, installa le dipendenze con `pnpm install --frozen-lockfile`, esegue `pnpm audit --audit-level high` e poi in quest'ordine `pnpm typecheck`, `pnpm test`, `pnpm build` e `pnpm test:backend`; nessun passo ha `continue-on-error`, condizioni `if` o `|| true`, nessun passo ripete il numero di versione di Reqvire, e ogni script su più righe inizia con `set -euo pipefail`. Fallisce se manca una fase, se l'ordine differisce o se un controllo fallito non fa fallire il job.
 
 #### Metadata
   * type: test-verification
@@ -174,7 +206,7 @@ La prova passa se il workflow si attiva su push del branch principale, pull requ
 Leggere come testo `.github/workflows/publish-image.yml` ed esaminarne attivazione, controllo della versione, dipendenze fra job e ordine di costruzione, verifica e push; applicare l'espressione regolare del workflow a tag validi e non validi.
 
 #### Details
-La prova passa se il workflow si attiva soltanto al push di tag `v*` e la sua espressione regolare accetta soltanto `vMAJOR.MINOR.PATCH` senza zeri iniziali; la versione di `package.json` viene confrontata con il tag; i job `checks` e `secret-scan` richiamano `ci.yml` e `secret-scan.yml` e il job `publish` dipende da entrambi; il passo di build costruisce le immagini `linux/amd64` e `linux/arm64` ed esegue `scripts/verify-docker-image.mjs` su ciascuna senza alcun push, e i `docker push` compaiono soltanto nei passi successivi; le immagini ricevono i tag `<tag>-amd64` e `<tag>-arm64` di `ghcr.io/ambrogio-app/ambrogio-web`, il manifest del tag di release le riunisce e viene controllato che contenga esattamente le due piattaforme; il workflow non contiene `latest`. Fallisce se un push precede la verifica di entrambe le immagini, se la pubblicazione non dipende da CI e scansione dei segreti o se compare il tag `latest`.
+La prova passa se il workflow si attiva soltanto al push di tag `v*` e la sua espressione regolare accetta soltanto `vMAJOR.MINOR.PATCH` senza zeri iniziali; la versione di `package.json` viene confrontata con il tag; i job `checks` e `secret-scan` richiamano `ci.yml` e `secret-scan.yml` e il job `publish` dipende da entrambi; il passo di build costruisce le immagini `linux/amd64` e `linux/arm64` ed esegue `scripts/verify-docker-image.mjs` su ciascuna senza alcun push, e i `docker push` compaiono soltanto nei passi successivi; le immagini ricevono i tag `<tag>-amd64` e `<tag>-arm64` di `ghcr.io/ambrogio-app/ambrogio-web`, il manifest del tag di release le riunisce e viene controllato che contenga esattamente le due piattaforme, e dopo il controllo il riferimento dell'immagine pubblicata è scritto nel riepilogo del job; il workflow non contiene `latest`. Fallisce se un push precede la verifica di entrambe le immagini, se la pubblicazione non dipende da CI e scansione dei segreti o se compare il tag `latest`.
 
 #### Metadata
   * type: test-verification
@@ -233,6 +265,22 @@ La prova passa se nessuno specificatore nomina un package dello scope `@ambrogio
   * verify: [Uso delle sole interfacce pubbliche del backend nella chat web](../Requirements/WebConversation.md#uso-delle-sole-interfacce-pubbliche-del-backend-nella-chat-web)
 ---
 
+### Prova dell'audit delle dipendenze della chat web
+
+Leggere come testo `.github/workflows/ci.yml` e `pnpm-workspace.yaml` ed esaminare il passo dell'audit e le eccezioni dichiarate.
+
+#### Details
+La prova passa se il job `checks` esegue `pnpm audit --audit-level high` nella cartella `workspace/ambrogio-web`, dopo `pnpm install --frozen-lockfile` della chat web e prima di `pnpm typecheck`; se nessun passo usa `--ignore`, `--ignore-unfixable`, `--ignore-registry-errors`, `--prod` o `--dev`; e se ogni voce di `auditConfig.ignoreGhsas` di `pnpm-workspace.yaml`, quando presente, è un singolo identificativo GHSA, senza altre chiavi di `auditConfig`. Fallisce se il passo manca, è in un'altra posizione o usa un livello diverso, o se un'eccezione non nomina un singolo avviso. L'esito dell'audit sugli avvisi del registro si osserva nella CI, perché richiede il registro npm.
+
+#### Metadata
+  * type: test-verification
+
+#### Relations
+  * derivedFrom: [Verifica del client web](#verifica-del-client-web)
+  * satisfiedBy: [ci-workflow.test.ts](../../test/repository/ci-workflow.test.ts)
+  * verify: [Audit delle dipendenze nella CI della chat web](../Requirements/WebConversation.md#audit-delle-dipendenze-nella-ci-della-chat-web)
+---
+
 ### Prova dell'hook pre-commit dei segreti della chat web
 
 In un repository Git temporaneo con `.githooks/pre-commit` attivato tramite `core.hooksPath`, mettere in staging un file con un token fittizio costruito durante la prova e tentare il commit; ripetere con un file privo di segreti e con un `PATH` che contiene soltanto `git`, senza `gitleaks`.
@@ -288,7 +336,7 @@ La prova passa se l'immagine dichiara le etichette `org.opencontainers.image.sou
 In jsdom con un backend simulato, aprire la pagina senza frammento, con `#/c/<id>` di una conversazione esistente, di una inesistente e con un frammento di forma diversa; aprire una conversazione dalla barra laterale, inviare il primo turno di una nuova chat e tornare indietro nella cronologia.
 
 #### Details
-La prova passa se senza frammento compare «Nuova chat», un frammento valido apre la conversazione indicata, una conversazione inesistente mostra il messaggio pubblico del backend lasciando disponibile «Nuova chat», un frammento di forma diversa viene ignorato, l'apertura di una conversazione e `turn.accepted` del primo turno aggiornano il frammento senza ricaricare la pagina e il ritorno nella cronologia riapre la chat precedente. Fallisce se la pagina si ricarica o mostra una conversazione diversa da quella indicata.
+La prova passa se senza frammento compare «Nuova chat», un frammento valido apre la conversazione indicata, una conversazione inesistente mostra il testo «Conversazione inesistente» dell'interfaccia lasciando disponibile «Nuova chat», un frammento di forma diversa viene ignorato, l'apertura di una conversazione e `turn.accepted` del primo turno aggiornano il frammento senza ricaricare la pagina e il ritorno nella cronologia riapre la chat precedente. Fallisce se la pagina si ricarica o mostra una conversazione diversa da quella indicata.
 
 #### Metadata
   * type: test-verification
@@ -302,10 +350,10 @@ La prova passa se senza frammento compare «Nuova chat», un frammento valido ap
 
 ### Prova dell'installazione congelata delle dipendenze
 
-In un checkout pulito, installare pnpm 12.11.2 ed eseguire `pnpm install --frozen-lockfile`, come fanno la CI e la fase di build dell'immagine.
+In un checkout pulito, attivare pnpm con Corepack ed eseguire `pnpm install --frozen-lockfile`, come fanno la CI e la fase di build dell'immagine.
 
 #### Details
-La prova passa se l'installazione termina senza errori, `pnpm-lock.yaml` resta invariato, `package-lock.json` non esiste, `packageManager` vale `pnpm@12.11.2` e nessuna dipendenza esegue script di build fuori da `allowBuilds`. Fallisce se il lockfile non corrisponde a `package.json`, se l'installazione lo modifica o se uno script di build di una dipendenza non ammessa viene eseguito.
+La prova passa se l'installazione termina senza errori, `pnpm-lock.yaml` resta invariato, `package-lock.json` non esiste, `packageManager` vale `pnpm@12.11.2`, ogni dipendenza diretta ha una versione esatta, `allowBuilds` dichiara soltanto `fsevents` con `false`, `pnpm-workspace.yaml` non imposta `minimumReleaseAge` né eccezioni all'attesa, nessuna dipendenza esegue script di build fuori da `allowBuilds`, e se la fase `build` del `Dockerfile` dichiara `ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0` ed esegue `corepack enable` prima della copia del manifest e dell'installazione, senza `npm install --global` né `npx`. Fallisce se il lockfile non corrisponde a `package.json`, se l'installazione lo modifica o se uno script di build di una dipendenza non ammessa viene eseguito.
 
 #### Metadata
   * type: test-verification
@@ -313,6 +361,7 @@ La prova passa se l'installazione termina senza errori, `pnpm-lock.yaml` resta i
 #### Relations
   * derivedFrom: [Verifica del client web](#verifica-del-client-web)
   * satisfiedBy: [ci.yml](../../.github/workflows/ci.yml)
+  * satisfiedBy: [stack-versions.test.ts](../../test/repository/stack-versions.test.ts)
   * verify: [Installazione riproducibile delle dipendenze](../Requirements/WebConversation.md#installazione-riproducibile-delle-dipendenze)
 ---
 
@@ -333,6 +382,23 @@ La prova passa se la configurazione valida produce l'URL base e la lingua attesi
   * satisfiedBy: [dictionary.test.ts](../../test/shared/i18n/dictionary.test.ts)
   * verify: [Indirizzo del backend dalla configurazione di esecuzione](../Requirements/WebConversation.md#indirizzo-del-backend-dalla-configurazione-di-esecuzione)
   * verify: [Lingua dell'interfaccia dalla configurazione](../Requirements/WebConversation.md#lingua-dellinterfaccia-dalla-configurazione)
+---
+
+### Prova della presentazione degli errori HTTP
+
+Con una funzione di lettura HTTP controllata, leggere elenco e storico e verificare gli indirizzi `api/v1/conversations` e `api/v1/conversations/<id>`; far rispondere errori Problem Details con `type` `/problems/conversation-not-found`, `/problems/invalid-pagination`, `about:blank` e un tipo sconosciuto, con `title` e `detail` marcati, e un errore con corpo non Problem Details; presentare gli esiti in italiano e in inglese.
+
+#### Details
+La prova passa se le letture usano soltanto le rotte `v1`, la conversazione inesistente mostra «Conversazione non trovata.» o «Conversation not found.», ogni altro errore mostra il testo dell'errore HTTP del backend con lo stato, e nessun testo presentato contiene `title` o `detail` del backend. Fallisce se il client usa le rotte senza versione o se il testo dipende da membri diversi da `type`.
+
+#### Metadata
+  * type: test-verification
+
+#### Relations
+  * derivedFrom: [Verifica del client web](#verifica-del-client-web)
+  * satisfiedBy: [address.test.tsx](../../test/app/address.test.tsx)
+  * satisfiedBy: [conversations-api.test.ts](../../test/features/conversations/model/conversations-api.test.ts)
+  * verify: [Presentazione degli errori HTTP nella chat web](../Requirements/WebConversation.md#presentazione-degli-errori-http-nella-chat-web)
 ---
 
 ### Prova della presentazione sanificata delle risposte
@@ -411,10 +477,10 @@ La prova passa se ogni dipendenza di `package.json` è fissata a una versione es
 
 ### Prova di integrazione della chat web con il backend affiancato
 
-Con il checkout di `ambrogio-backend` affiancato nella cartella di lavoro, oppure indicato da `AMBROGIO_BACKEND_REPO`, compilato, avviare il server conversazionale tramite l'ingresso di prova pubblico del backend, con un produttore di risposte deterministico e il componente HTTP configurato con un'origine di esempio autorizzata. Usare il nucleo del client web per inviare turni, con esito completato, errore dopo frammenti e interruzione, e per leggere elenco e storico; aprire il canale e leggere l'elenco con l'origine autorizzata e con un'origine non autorizzata.
+Con il checkout di `ambrogio-backend` affiancato nella cartella di lavoro, oppure indicato da `AMBROGIO_BACKEND_REPO`, compilato, avviare il server conversazionale tramite l'ingresso di prova pubblico del backend, con un produttore di risposte deterministico e il componente HTTP configurato con un'origine di esempio autorizzata. Usare il nucleo del client web per inviare turni, con esito completato, errore dopo frammenti e interruzione, e per leggere elenco e storico dall'API `v1`, anche per una conversazione inesistente; aprire il canale e leggere l'elenco con l'origine autorizzata e con un'origine non autorizzata.
 
 #### Details
-La prova passa se il client conversa e consulta tramite le sole interfacce pubbliche, il backend valida i messaggi con lo schema, l'origine autorizzata apre la sessione e riceve gli header CORS e quella non autorizzata viene respinta. Fallisce se il checkout del backend manca o non è compilato, con un messaggio che lo indica, se un messaggio è rifiutato dallo schema o se la prova o il client importano dal backend moduli diversi dall'ingresso di prova pubblico. La prova riporta il commit del backend usato e gira nella CI dopo il checkout affiancato.
+La prova passa se il client conversa e consulta tramite le sole interfacce pubbliche, il backend valida i messaggi con lo schema, la conversazione inesistente produce l'esito con il tipo `/problems/conversation-not-found`, l'origine autorizzata apre la sessione e riceve gli header CORS sulle rotte `/api/v1/` e quella non autorizzata viene respinta. Fallisce se il checkout del backend manca o non è compilato, con un messaggio che lo indica, se un messaggio è rifiutato dallo schema o se la prova o il client importano dal backend moduli diversi dall'ingresso di prova pubblico. La prova riporta il commit del backend usato e gira nella CI dopo il checkout affiancato.
 
 #### Metadata
   * type: test-verification

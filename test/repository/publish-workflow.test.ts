@@ -64,6 +64,7 @@ describe('image publication workflow', () => {
       'docker buildx imagetools create --tag "$IMAGE" "$IMAGE-amd64" "$IMAGE-arm64"',
       'docker buildx imagetools inspect --raw "$IMAGE" > "$RUNNER_TEMP/release-manifest.json"',
       `jq -e '[.manifests[].platform | select(.os == "linux") | .architecture] | sort == ["amd64", "arm64"]' "$RUNNER_TEMP/release-manifest.json"`,
+      'echo "Published $IMAGE" >> "$GITHUB_STEP_SUMMARY"',
     ]);
   });
 

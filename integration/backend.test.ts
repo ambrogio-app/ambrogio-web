@@ -98,15 +98,17 @@ describe('web client against the side-by-side backend', () => {
     const history = await api().history(conversationId);
     expect(history.ok && history.value.turns.map(turn => [turn.text, turn.status, turn.answer]))
       .toEqual([['ciao', 'answered', 'Ciao dal server.']]);
+    expect(await api().history('00000000-0000-4000-8000-000000000000')).toEqual({ ok: false,
+      error: { kind: 'http-error', status: 404, type: '/problems/conversation-not-found' } });
 
     expect(await page.send('errore', conversationId)).toEqual({ ok: false,
       error: { kind: 'failed', conversationId, message: 'Non riesco a completare la risposta.' } });
     expect(await page.send('ciao', '00000000-0000-4000-8000-000000000000')).toMatchObject({ ok: false,
       error: { kind: 'rejected', message: 'Conversazione non trovata.' } });
 
-    const allowed = await fetch(new URL('api/conversations', base), { headers: { Origin: allowedOrigin } });
+    const allowed = await fetch(new URL('api/v1/conversations', base), { headers: { Origin: allowedOrigin } });
     expect(allowed.headers.get('access-control-allow-origin')).toBe(allowedOrigin);
-    const refused = await fetch(new URL('api/conversations', base), { headers: { Origin: otherOrigin } });
+    const refused = await fetch(new URL('api/v1/conversations', base), { headers: { Origin: otherOrigin } });
     expect(refused.headers.get('access-control-allow-origin')).toBeNull();
     const stranger = session(otherOrigin);
     expect(await stranger.send('ciao', null)).toEqual({ ok: false, error: { kind: 'unreachable' } });

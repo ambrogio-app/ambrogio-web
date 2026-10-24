@@ -1,6 +1,6 @@
 import { spawnSync } from 'node:child_process';
 import { randomInt } from 'node:crypto';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -31,9 +31,13 @@ export function fakeGitHubToken(): string {
   return ['g', 'h', 'p', '_'].join('') + Array.from({ length: 36 }, () => alphabet[randomInt(alphabet.length)]).join('');
 }
 
-/** A temporary Git repository isolated from the global and system Git configuration. */
+/**
+ * A temporary Git repository isolated from the global and system Git configuration. The repository is
+ * `repository/` inside a temporary folder, so that tests can place sibling folders next to it.
+ */
 export class GitSandbox {
-  readonly directory = mkdtempSync(join(tmpdir(), 'ambrogio-web-git-'));
+  readonly root = mkdtempSync(join(tmpdir(), 'ambrogio-web-git-'));
+  readonly directory = join(this.root, 'repository');
   private readonly env: NodeJS.ProcessEnv = {
     ...process.env,
     GIT_CONFIG_GLOBAL: '/dev/null',
@@ -42,6 +46,7 @@ export class GitSandbox {
   };
 
   constructor() {
+    mkdirSync(this.directory);
     for (const args of [
       ['init', '--quiet', '--initial-branch=main'],
       ['config', 'user.name', 'Test Author'],
@@ -72,6 +77,6 @@ export class GitSandbox {
   }
 
   remove(): void {
-    rmSync(this.directory, { recursive: true, force: true });
+    rmSync(this.root, { recursive: true, force: true });
   }
 }

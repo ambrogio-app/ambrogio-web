@@ -52,6 +52,25 @@ Quando la persona sceglie una conversazione nella barra laterale, il client web 
   * specify: [Conversazione testuale nel browser](../Capabilities/WebConversation.md#conversazione-testuale-nel-browser)
 ---
 
+### Audit delle dipendenze nella CI della chat web
+
+Quando la CI della chat web esegue il job `Web client checks`, il job deve eseguire l'audit delle dipendenze della chat web dopo la loro installazione congelata e prima del controllo TypeScript, e deve fallire se l'audit trova una vulnerabilità di gravità alta o critica non elencata fra le eccezioni accettate.
+
+#### Details
+Nessuna eccezione è accettata per la chat web: `pnpm-workspace.yaml` non dichiara `auditConfig`.
+
+#### Metadata
+  * type: requirement
+
+#### Contract References
+  * [Audit delle dipendenze con pnpm](../../../ambrogio-model/system-model/Contracts/ModelDrivenDevelopment.md#audit-delle-dipendenze-con-pnpm)
+
+#### Relations
+  * derivedFrom: [Audit delle vulnerabilità delle dipendenze](../../../ambrogio-model/system-model/Requirements/ModelDrivenDevelopment.md#audit-delle-vulnerabilità-delle-dipendenze)
+  * satisfiedBy: [ci.yml](../../.github/workflows/ci.yml)
+  * satisfiedBy: [pnpm-workspace.yaml](../../pnpm-workspace.yaml)
+---
+
 ### Chat aperta nell'indirizzo della pagina
 
 Quando la persona apre una conversazione conservata, il client web deve riportarne l'identificativo nell'indirizzo della pagina; quando la pagina viene aperta con l'identificativo di una conversazione, deve mostrare quella conversazione come chat corrente.
@@ -84,12 +103,31 @@ Ambrogio deve fornire alla famiglia un client di chat testuale utilizzabile da u
   * specify: [Conversazione testuale nel browser](../Capabilities/WebConversation.md#conversazione-testuale-nel-browser)
 ---
 
+### Comando di verifica completo della chat web
+
+La chat web deve offrire lo script `verify` di `package.json`, eseguito con `pnpm verify`, che ripete in locale i controlli del job `Web client checks` nell'ordine stabilito dal comando di verifica completo e termina con esito non riuscito al primo controllo fallito.
+
+#### Details
+I comandi del punto 5 di «Comando di verifica completo con pnpm», cioè i controlli del job della CI successivi all'installazione delle dipendenze della chat web, sono nell'ordine `pnpm typecheck`, `pnpm test`, `pnpm build` e `pnpm test:backend`.
+
+#### Metadata
+  * type: requirement
+
+#### Contract References
+  * [Comando di verifica completo con pnpm](../../../ambrogio-model/system-model/Contracts/ModelDrivenDevelopment.md#comando-di-verifica-completo-con-pnpm)
+
+#### Relations
+  * derivedFrom: [Comando di verifica completo](../../../ambrogio-model/system-model/Requirements/ModelDrivenDevelopment.md#comando-di-verifica-completo)
+  * satisfiedBy: [AGENTS.md](../../AGENTS.md)
+  * satisfiedBy: [package.json](../../package.json)
+---
+
 ### Controlli CI del client web
 
 Quando viene eseguito un push sul branch principale, viene proposta una pull request, viene richiesta un'esecuzione manuale oppure un altro workflow del repository la richiama, la CI della chat web deve eseguire nel job `Web client checks` i controlli dell'intero modello sulla cartella di lavoro affiancata, il controllo TypeScript senza emissione, la suite di test, la prova di integrazione con il backend affiancato e la build, e deve fallire se uno di questi controlli fallisce.
 
 #### Details
-Il workflow `.github/workflows/ci.yml` esegue il checkout di `ambrogio-web` in `workspace/ambrogio-web`, clona `ambrogio-model` sul branch della modifica se esiste e altrimenti su `main`, scarica gli altri repository con `checkout-workspace` ed esegue `model-checks` sulla cartella `workspace`; installa le dipendenze del backend affiancato in `workspace/ambrogio-backend` e lo compila con la versione di pnpm che il backend dichiara; nella cartella `workspace/ambrogio-web` installa pnpm, gitleaks secondo il profilo di scansione dei segreti della chat web e le dipendenze su Node.js 24 ed esegue `pnpm typecheck`, `pnpm test`, che usa il backend simulato locale, `pnpm build` e la prova di integrazione con il backend affiancato (`pnpm test:backend`).
+Il workflow `.github/workflows/ci.yml` esegue il checkout di `ambrogio-web` in `workspace/ambrogio-web`, clona `ambrogio-model` sul branch della modifica se esiste e altrimenti su `main`, scarica gli altri repository con `checkout-workspace` ed esegue `model-checks` sulla cartella `workspace`; installa le dipendenze del backend affiancato in `workspace/ambrogio-backend` e lo compila, dopo aver attivato pnpm con Corepack, con la versione di pnpm che il backend dichiara; nella cartella `workspace/ambrogio-web` installa gitleaks secondo il profilo di scansione dei segreti della chat web e le dipendenze su Node.js 24, esegue l'audit delle dipendenze e poi `pnpm typecheck`, `pnpm test`, che usa il backend simulato locale, `pnpm build` e la prova di integrazione con il backend affiancato (`pnpm test:backend`).
 
 #### Metadata
   * type: requirement
@@ -104,6 +142,22 @@ Il workflow `.github/workflows/ci.yml` esegue il checkout di `ambrogio-web` in `
   * derivedFrom: [Controlli CI dei repository di Ambrogio](../../../ambrogio-model/system-model/Requirements/ModelDrivenDevelopment.md#controlli-ci-dei-repository-di-ambrogio)
   * satisfiedBy: [ci.yml](../../.github/workflows/ci.yml)
   * specify: [Sviluppo governato dal modello](../../../ambrogio-model/system-model/Capabilities/Engineering.md#sviluppo-governato-dal-modello)
+---
+
+### Controlli del modello prima del commit della chat web
+
+Quando si crea un commit in un clone della chat web con gli hook versionati attivi, l'hook `.githooks/pre-commit` del repository deve eseguire, dopo la scansione dei segreti, i controlli dell'intero modello con `model-checks` di `ambrogio-model` affiancato, e deve impedire il commit se i controlli falliscono o se `ambrogio-model` non è affiancato al repository.
+
+#### Metadata
+  * type: requirement
+
+#### Contract References
+  * [Controlli del modello dello spazio di lavoro](../../../ambrogio-model/system-model/Contracts/ModelDrivenDevelopment.md#controlli-del-modello-dello-spazio-di-lavoro)
+  * [Controlli del modello nell'hook pre-commit](../../../ambrogio-model/system-model/Contracts/ModelDrivenDevelopment.md#controlli-del-modello-nellhook-pre-commit)
+
+#### Relations
+  * derivedFrom: [Controlli del modello prima del commit](../../../ambrogio-model/system-model/Requirements/ModelDrivenDevelopment.md#controlli-del-modello-prima-del-commit)
+  * satisfiedBy: [pre-commit](../../.githooks/pre-commit)
 ---
 
 ### Controlli obbligatori prima del merge della chat web
@@ -139,7 +193,10 @@ Quando si crea un commit in un clone della chat web con gli hook versionati atti
 
 ### Distribuzione come immagine Docker
 
-Il client web deve essere distribuito come immagine container che serve i file statici dell'applicazione con un processo non privilegiato e riceve la configurazione di esecuzione dall'installazione, senza includerla nell'immagine.
+Il client web deve essere distribuito come immagine container che serve i file statici dell'applicazione con un processo non privilegiato e riceve la configurazione di esecuzione dall'installazione, senza includerla nell'immagine, costruita da un contesto di build che esclude storia Git, dipendenze installate, risultati di build, configurazioni effettive, modello, test e file d'ambiente.
+
+#### Details
+Origine: baseline Reqvire «Configuration and data outside the container image», adottata: la chat web non ha dati persistenti; «Minimal container build context», adattata: il contesto non esclude file di database, che la chat web non produce, ed esclude anche configurazioni effettive, workflow, hook e script del repository.
 
 #### Metadata
   * type: requirement
@@ -214,7 +271,7 @@ Quando la pagina del client web viene aperta, il client deve ricavare l'indirizz
 
 ### Installazione riproducibile delle dipendenze
 
-Quando si installano le dipendenze del client web, in sviluppo, nella CI o nella build dell'immagine, l'installazione deve usare il gestore di pacchetti e il lockfile fissati dal repository senza modificarne le versioni e deve impedire gli script di build delle dipendenze non ammesse esplicitamente.
+Quando si installano le dipendenze del client web, in sviluppo, nella CI o nella build dell'immagine, l'installazione deve usare il gestore di pacchetti e il lockfile fissati dal repository senza modificarne le versioni, con ogni dipendenza diretta dichiarata con una versione esatta, deve impedire gli script di build delle dipendenze non ammesse esplicitamente e deve applicare l'attesa minima di pnpm per le versioni appena pubblicate.
 
 #### Details
 Un lockfile aggiornato durante l'installazione o uno script di build eseguito senza un'ammissione esplicita introducono nel client codice diverso da quello revisionato.
@@ -222,13 +279,16 @@ Un lockfile aggiornato durante l'installazione o uno script di build eseguito se
 #### Metadata
   * type: requirement
 
+#### Contract References
+  * [Profilo di installazione con pnpm e Corepack](../../../ambrogio-model/system-model/Contracts/ModelDrivenDevelopment.md#profilo-di-installazione-con-pnpm-e-corepack)
+
 #### Relations
+  * derivedFrom: [Installazione delle dipendenze con pnpm attivato da Corepack](../../../ambrogio-model/system-model/Requirements/ModelDrivenDevelopment.md#installazione-delle-dipendenze-con-pnpm-attivato-da-corepack)
   * satisfiedBy: [ci.yml](../../.github/workflows/ci.yml)
   * satisfiedBy: [Dockerfile](../../Dockerfile)
   * satisfiedBy: [package.json](../../package.json)
   * satisfiedBy: [pnpm-lock.yaml](../../pnpm-lock.yaml)
   * satisfiedBy: [pnpm-workspace.yaml](../../pnpm-workspace.yaml)
-  * specify: [Conversazione testuale nel browser](../Capabilities/WebConversation.md#conversazione-testuale-nel-browser)
 ---
 
 ### Invio del turno dalla chat web
@@ -309,6 +369,31 @@ All'apertura della pagina, la chat web deve mostrare la nuova chat locale come v
   * derivedFrom: [Nuova chat iniziale nei client testuali](../../../ambrogio-model/system-model/Requirements/TextConversation.md#nuova-chat-iniziale-nei-client-testuali)
   * satisfiedBy: [ChatApplication.tsx](../../src/app/ChatApplication.tsx)
   * satisfiedBy: [chat-state.ts](../../src/features/chat/model/chat-state.ts)
+  * specify: [Conversazione familiare](../../../ambrogio-model/system-model/Capabilities/Product.md#conversazione-familiare)
+---
+
+### Presentazione degli errori HTTP nella chat web
+
+Quando una lettura dell'elenco o dello storico dall'API HTTP `v1` del backend riceve una risposta d'errore, la chat web deve presentare il testo «Conversazione inesistente» dell'interfaccia per il tipo `/problems/conversation-not-found` e il testo «Errore HTTP del backend», con lo stato HTTP, per ogni altro tipo o per una risposta d'errore che non è un Problem Details, senza mostrare `title` o `detail` del backend.
+
+#### Details
+Il tipo si legge soltanto dal membro `type` del corpo `application/problem+json`; la lingua del testo è quella dell'interfaccia, indipendente dalla lingua configurata nel backend.
+
+#### Metadata
+  * type: requirement
+
+#### Contract References
+  * [Risposta HTTP dell'elenco conversazioni](../../../ambrogio-backend/system-model/Contracts/FamilyConversation.md#risposta-http-dellelenco-conversazioni)
+  * [Risposta HTTP dello storico conversazionale](../../../ambrogio-backend/system-model/Contracts/FamilyConversation.md#risposta-http-dello-storico-conversazionale)
+  * [Catalogo dei problemi di protocollo HTTP](../../../ambrogio-backend/system-model/Contracts/HttpApi.md#catalogo-dei-problemi-di-protocollo-http)
+  * [Forma dei Problem Details dell'API HTTP](../../../ambrogio-backend/system-model/Contracts/HttpApi.md#forma-dei-problem-details-dellapi-http)
+  * [Versioni dell'API HTTP pubblica](../../../ambrogio-backend/system-model/Contracts/HttpApi.md#versioni-dellapi-http-pubblica)
+  * [Lingue dell'interfaccia del client web](../Contracts/WebConversation.md#lingue-dellinterfaccia-del-client-web)
+
+#### Relations
+  * derivedFrom: [Interpretazione degli errori HTTP per tipo da parte del client](../../../ambrogio-backend/system-model/Requirements/HttpApi.md#interpretazione-degli-errori-http-per-tipo-da-parte-del-client)
+  * satisfiedBy: [ChatApplication.tsx](../../src/app/ChatApplication.tsx)
+  * satisfiedBy: [conversations-api.ts](../../src/features/conversations/model/conversations-api.ts)
   * specify: [Conversazione familiare](../../../ambrogio-model/system-model/Capabilities/Product.md#conversazione-familiare)
 ---
 
@@ -488,6 +573,9 @@ Quando la sessione conversazionale si chiude prima dell'esito di un turno, oppur
 
 Il client web deve organizzare il codice per funzionalità e mantenere configurazione, identità, sessione conversazionale, consultazione HTTP e stato di ogni funzionalità in parti TypeScript indipendenti da React e dal DOM, usate dai componenti dell'interfaccia senza dipendere da essi.
 
+#### Details
+Origine: baseline Reqvire «No generic sharing packages without a recorded decision», adattata: la regola riguarda le cartelle del client web, che non ha package; `src/shared/` è la cartella comune a più funzionalità registrata in «Architettura del client web».
+
 #### Metadata
   * type: requirement
 
@@ -500,6 +588,9 @@ Il client web deve organizzare il codice per funzionalità e mantenere configura
 ### Stack del client web
 
 Il client web deve essere un'applicazione a pagina singola in TypeScript e React, costruita in file statici, che in esecuzione non richiede un processo server proprio oltre al server dei file statici.
+
+#### Details
+Origine: baseline Reqvire «Strict TypeScript compilation», adottata.
 
 #### Metadata
   * type: requirement
