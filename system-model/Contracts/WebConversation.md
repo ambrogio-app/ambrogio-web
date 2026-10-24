@@ -10,9 +10,6 @@ Il codice è organizzato per funzionalità (vertical slice), secondo lo schema d
 
 Il nucleo del client è l'insieme delle parti `model/` e di `src/shared/` esclusi i componenti: non importa React né parti `ui/` e non accede a `document` o `window`; le API del browser che usa (`fetch`, `WebSocket`, `Storage`, `crypto.getRandomValues`, preferenze di lingua, indirizzo della pagina) gli sono fornite come dipendenze da `src/app/`, così si prova in Node. Lo stato di ogni funzionalità è una funzione reducer pura nella sua parte `model/`, collegata ai componenti con `useReducer` e un contesto React, senza librerie di stato. Gli stili sono CSS Modules, un file `<Componente>.module.css` accanto a ogni componente, compilati da Vite in file CSS statici. Le operazioni del nucleo con esiti negativi previsti restituiscono `Result<T, E>`, cioè `{ ok: true, value }` oppure `{ ok: false, error }`, con varianti di errore distinte da un campo `kind`; le eccezioni restano per i guasti inattesi. I file TypeScript non React hanno nomi in kebab-case (`conversation-session.ts`), i componenti in PascalCase (`ChatPanel.tsx`); il punto d'ingresso `src/app/main.tsx`, che non è un componente, ha il nome in minuscolo. I test stanno in `test/`, con la stessa struttura di `src/`, e si chiamano `<nome>.test.ts` o `<nome>.test.tsx`; fanno eccezione `test/support/`, con il backend simulato e gli aiuti condivisi dai test, e `test/repository/`, con le prove sui file del repository esterni a `src/`, come workflow, hook, dipendenze e regole di importazione. Non si usano ESLint né Prettier.
 
-#### Alternative e conseguenze
-Sono state considerate la divisione per natura tecnica in nucleo, interfaccia e lingue, più semplice finché l'applicazione è piccola ma con ogni funzionalità sparsa su più cartelle; Feature-Sliced Design, rigorosa ma sovradimensionata per una sola pagina; l'architettura esagonale di backend e satellite, sproporzionata per un'interfaccia; e l'organizzazione per tipo tecnico tipica dei progetti React. Per lo stato sono stati considerati Zustand e TanStack Query, per gli stili un unico file globale e Tailwind CSS, per i test i file accanto al codice e per gli esiti le eccezioni come nella CLI. Le fette verticali tengono insieme logica e interfaccia di ogni funzionalità e rendono semplice aggiungerne di nuove; la regola delle parti `model/` pure conserva la logica del protocollo e dei turni paralleli provabile senza browser, al costo di passare esplicitamente le API del browser e di collegare le funzionalità soltanto in `src/app/`.
-
 #### Metadata
   * type: specification
 
@@ -23,9 +20,6 @@ Sono state considerate la divisione per natura tecnica in nucleo, interfaccia e 
 ### Configurazione di esecuzione del client web
 
 All'apertura della pagina il client legge `config.json` dalla stessa directory di `index.html`, con una richiesta che non usa la cache del browser. Il file è un oggetto JSON con il campo obbligatorio `backendUrl`, l'URL base HTTP o HTTPS assoluto del backend, senza credenziali, query o frammento, con eventuale prefisso di percorso, e il campo opzionale `language`, che sceglie la lingua dell'interfaccia tra `it` e `en`. Se `language` manca, il client usa la prima lingua supportata tra quelle preferite dal browser, altrimenti `en`. Un valore di `language` non supportato o un campo diverso da `backendUrl` e `language` rende la configurazione non valida, così un errore di battitura non passa inosservato. Il client non sceglie un backend predefinito. Se il file manca, non è JSON valido o non rispetta questa forma, la pagina mostra l'errore di configurazione con il motivo, nella lingua preferita dal browser, e non apre sessioni né richieste verso il backend. Dall'URL base il client ricava gli endpoint HTTP `api/conversations` e l'indirizzo WebSocket `api/session`, con schema `ws:` per `http:` e `wss:` per `https:`. Il file appartiene all'installazione: non è incluso nel repository né nell'immagine e il repository ne contiene solo un esempio con valori segnaposto. Il browser dichiara l'origine della pagina nell'apertura del canale e nelle letture HTTP: il backend accetta il canale e autorizza le letture soltanto per le origini che chi installa elenca nella configurazione del componente HTTP del backend, secondo «Controllo dell'origine all'apertura della sessione» e «Politica CORS del componente HTTP».
-
-#### Alternative e conseguenze
-Sono state considerate una variabile d'ambiente del container da cui generare il file all'avvio, scartata perché backend e satellite escludono le variabili d'ambiente per i valori di configurazione, e la sola stessa origine tramite reverse proxy, che non richiede configurazione ma funziona soltanto dietro un proxy che instrada `/api` al backend.
 
 #### Metadata
   * type: input-output
@@ -38,9 +32,6 @@ Sono state considerate una variabile d'ambiente del container da cui generare il
 
 Al primo uso il browser genera un `clientId` della forma `web-<UUID v4>` e lo conserva in `localStorage` con la chiave `ambrogio.web.clientId`; gli usi successivi nello stesso browser e per la stessa origine riusano il valore conservato. Un valore conservato vuoto o non conforme viene sostituito da uno nuovo. Il `name` vale `Web <browser>`, con `<browser>` uguale a `Firefox`, `Chrome`, `Edge` o `Safari` secondo lo user agent, altrimenti `Web browser`, indipendentemente dalla lingua dell'interfaccia. Se `localStorage` non è disponibile, il client usa un identificativo generato per la sola pagina aperta. Gli UUID si ricavano da `crypto.getRandomValues`, disponibile anche quando la pagina è servita in HTTP non sicuro, dove `crypto.randomUUID` manca. Cancellare i dati del sito produce una nuova identità; la modifica del nome dall'interfaccia è una capacità successiva.
 
-#### Alternative e conseguenze
-È stata considerata un'identità fissata in `config.json`, che però renderebbe indistinguibili tutti i browser della casa, e un nome che include il sistema operativo, che distingue meglio i dispositivi ma rivela più dettagli al backend. L'identità per browser distingue i dispositivi senza configurazione, al costo di cambiare quando la persona cancella i dati del sito.
-
 #### Metadata
   * type: specification
 
@@ -51,9 +42,6 @@ Al primo uso il browser genera un `clientId` della forma `web-<UUID v4>` e lo co
 ### Indirizzo della chat aperta
 
 La chat corrente compare nel frammento dell'indirizzo della pagina come `#/c/<conversationId>`; la voce locale «Nuova chat» corrisponde all'indirizzo senza frammento. Aprire una conversazione conservata o ricevere `turn.accepted` per il primo turno di una nuova chat aggiorna il frammento senza ricaricare la pagina. Aprire la pagina con un frammento valido, o cambiarlo dalla cronologia del browser, mostra quella conversazione leggendone lo storico; se lo storico non è leggibile, l'area della chat mostra il messaggio pubblico ricevuto e «Nuova chat» resta disponibile. Un frammento con forma diversa viene ignorato e la pagina apre «Nuova chat». Non si usano librerie di routing e il server statico non richiede configurazione aggiuntiva.
-
-#### Alternative e conseguenze
-È stato considerato un indirizzo sempre uguale, come all'avvio del client terminale, che però riporta a «Nuova chat» a ogni ricaricamento e non permette di aprire una conversazione da un link.
 
 #### Metadata
   * type: specification
@@ -86,9 +74,6 @@ L'interfaccia è disponibile in italiano (`it`) e inglese (`en`); la lingua si s
 | Errore HTTP del backend | «Il backend ha risposto con un errore (HTTP <n>).» | «The backend answered with an error (HTTP <n>).» |
 | Configurazione non valida | «Configurazione del client web non valida» | «Invalid web client configuration» |
 
-#### Alternative e conseguenze
-È stata considerata una lingua predefinita fissa, italiana o inglese, quando `language` manca. Seguire il browser è più comodo per chi non configura il campo, al costo di mostrare lingue diverse su dispositivi diversi della stessa installazione.
-
 #### Metadata
   * type: specification
 
@@ -99,9 +84,6 @@ L'interfaccia è disponibile in italiano (`it`) e inglese (`en`); la lingua si s
 ### Presentazione Markdown delle risposte
 
 Le risposte di Ambrogio, anche durante la risposta progressiva, sono rese come Markdown con `react-markdown` e `remark-gfm`, che producono elementi React senza `innerHTML`. L'HTML grezzo contenuto nella risposta non viene interpretato e resta testo. I link sono cliccabili soltanto con schema `http:`, `https:` o `mailto:`, si aprono in una nuova scheda con `rel="noopener noreferrer"`; con altri schemi resta il solo testo del link. Le immagini Markdown non vengono caricate: al loro posto compare il testo alternativo, come link se l'indirizzo è `http:` o `https:`. I messaggi della persona e i messaggi di errore sono testo semplice con gli a capo preservati, senza interpretazione di Markdown o HTML.
-
-#### Alternative e conseguenze
-È stata considerata la presentazione di tutte le risposte come testo semplice, come nel client terminale, senza dipendenze ma con elenchi e grassetti lasciati come simboli, e la coppia `markdown-it` con DOMPurify, che richiede `innerHTML` e due librerie da mantenere allineate. Il caricamento delle immagini remote è escluso perché farebbe contattare alla pagina server esterni scelti dal testo prodotto dal modello e richiederebbe di allargare la Content-Security-Policy. Anche i messaggi della persona come Markdown sono stati scartati: restano come la persona li ha scritti.
 
 #### Metadata
   * type: specification
@@ -116,9 +98,6 @@ Il client web è distribuito come immagine container propria, servizio facoltati
 
 L'immagine finale dichiara le etichette OCI `org.opencontainers.image.source` con valore `https://github.com/ambrogio-app/ambrogio-web` e `org.opencontainers.image.licenses` con valore `MIT`, la licenza del repository. Il contesto di build esclude, tramite `.dockerignore`, `.git`, `.github`, `.githooks`, `node_modules` e `**/node_modules`, `dist`, `config.json`, `public/config.json`, `system-model`, `test`, `integration`, `scripts`, `*.env` e `*.env.*`, così che configurazioni effettive, file d'ambiente e dipendenze locali non entrino nella build.
 
-#### Alternative e conseguenze
-Sono state considerate la sola pubblicazione di un archivio di file statici, che lascia a chi installa la scelta e la configurazione del server web, e il servizio dei file da parte del backend sulla stessa origine, come fanno Home Assistant e Immich: eviterebbe CORS e `config.json`, ma renderebbe l'interfaccia parte obbligatoria del backend e legherebbe i rilasci dei due repository. Il client web resta invece un componente facoltativo, come gli altri client. Per il server statico sono stati considerati Caddy, che di base gira come root, e un server Node.js del progetto, con più codice da mantenere. L'immagine propria costa un container in più e richiede di aggiungere l'origine del client all'elenco del backend.
-
 #### Metadata
   * type: specification
 
@@ -129,9 +108,6 @@ Sono state considerate la sola pubblicazione di un archivio di file statici, che
 ### Profilo di accessibilità di base del client web
 
 La pagina usa HTML semantico: la barra laterale è una regione di navigazione con un elenco di conversazioni, la conversazione corrente è la regione principale e ogni comando è un pulsante con un nome accessibile nella lingua dell'interfaccia. Ogni funzione è raggiungibile e utilizzabile da tastiera in un ordine coerente con la disposizione, e l'elemento con il focus ha un indicatore visibile. Il campo di scrittura ha un'etichetta. Ogni messaggio della chat ha l'etichetta di chi parla: quella della persona o «Ambrogio». La voce della chat corrente è segnalata con `aria-current`. Una regione `aria-live` cortese annuncia l'esito di ogni turno della chat corrente leggendo il testo della risposta completata, il messaggio di errore oppure l'avviso di risposta interrotta, senza annunciare i singoli frammenti della risposta progressiva. Sotto i 720 pixel, aprire il pannello delle conversazioni porta il focus al suo interno, `Esc` lo chiude e il focus torna al pulsante che lo ha aperto.
-
-#### Alternative e conseguenze
-Sono state considerate una conformità formale WCAG 2.2 AA, verificata con strumenti automatici e controllo manuale, e il rinvio dell'accessibilità a una capacità successiva. Il profilo di base rende la chat usabile da tastiera e con lettore di schermo e si verifica nei test della schermata, senza dichiarare una conformità formale. Per l'annuncio dell'esito è stato considerato un avviso breve come «Risposta completata.», che però obbliga a cercare la risposta; leggere direttamente il testo dell'esito non richiede testi aggiuntivi.
 
 #### Metadata
   * type: specification
@@ -195,9 +171,6 @@ I workflow `.github/workflows/ci.yml`, `.github/workflows/secret-scan.yml` e `.g
 
 Le risposte del server statico hanno `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer` e `Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' http: https: ws: wss:; frame-ancestors 'none'; base-uri 'none'; form-action 'none'; object-src 'none'`. `connect-src` ammette qualunque origine HTTP(S) e WebSocket perché l'indirizzo del backend si conosce solo a runtime. `index.html` e `config.json` hanno `Cache-Control: no-store`; i file con impronta sotto `assets/` hanno `Cache-Control: public, max-age=31536000, immutable`. Il server non rivela la versione di nginx. HTTPS e HSTS sono compito del reverse proxy.
 
-#### Alternative e conseguenze
-Una Content-Security-Policy generata all'avvio per ammettere solo l'origine del backend richiederebbe uno script di avvio nel container.
-
 #### Metadata
   * type: specification
 
@@ -224,9 +197,6 @@ L'area destra mostra in ordine gli scambi della chat: il testo della persona e, 
 
 La pagina occupa esattamente l'altezza della finestra e non scorre nel suo insieme. L'elenco delle conversazioni scorre all'interno della barra laterale e gli scambi scorrono all'interno dell'area destra, ciascuno con la propria barra di scorrimento; l'intestazione della chat e il campo di scrittura restano sempre visibili. Gli stili globali della pagina, cioè colori dei due temi, font e altezza, sono un foglio di stile ordinario importato dall'applicazione e non un modulo CSS, perché la build scarta i moduli CSS importati senza usarne le classi.
 
-#### Alternative e conseguenze
-È stato considerato di bloccare invio, navigazione e aggiornamento durante un turno, come nel client terminale: più semplice, ma impedisce di consultare o usare altre conversazioni mentre una risposta è lenta. La navigazione libera sfrutta l'elaborazione parallela di conversazioni diverse già garantita dal backend, al costo di conservare nella pagina lo stato di più turni contemporanei. Per i colori è stato considerato un solo tema chiaro, con meno stili ma senza rispettare la preferenza del dispositivo.
-
 #### Metadata
   * type: specification
 
@@ -250,9 +220,6 @@ Ogni turno è una richiesta testuale: `input.start` con `requestId` UUID v4 e `s
 ### Stack e build del client web
 
 Il client web è un'applicazione a pagina singola in TypeScript con React 19, costruita con Vite in file statici sotto `dist/`; non ha un processo server proprio e in esecuzione usa soltanto le API del browser, incluso il `WebSocket` nativo per `ambrogio.v1`. Compilazione, test e CI usano Node.js 24; le dipendenze si installano secondo il contratto «Profilo di installazione delle dipendenze del client web». Le dipendenze di `package.json` sono fissate a versioni esatte, tra cui TypeScript 7.0.2 e Vitest 5.0.5. TypeScript è in modalità `strict`. Le risposte in Markdown sono rese con `react-markdown` e `remark-gfm`. Le traduzioni dell'interfaccia sono dizionari TypeScript propri, uno per lingua, con le stesse chiavi controllate dal compilatore, senza librerie di internazionalizzazione. I test usano Vitest: in ambiente Node per il protocollo e la consultazione, con un backend simulato basato su `ws`, e in ambiente jsdom con Testing Library per la schermata. Le prove sui file del repository girano in ambiente Node senza dipendenze aggiuntive: leggono i workflow come testo, senza librerie YAML, estraggono gli import e i riferimenti del codice dal testo dei sorgenti con espressioni regolari ed eseguono l'hook pre-commit e il comando della scansione con il gitleaks installato.
-
-#### Alternative e conseguenze
-Sono stati considerati Svelte, con bundle più piccolo ma ecosistema meno diffuso, e TypeScript senza framework, senza dipendenze di runtime ma con più codice manuale per lo stato dell'interfaccia. React offre l'ecosistema più diffuso e rende semplice gestire barra laterale, risposta progressiva e paginazione, al costo di un bundle più grande, irrilevante per un'applicazione domestica servita in rete locale. Per le traduzioni è stata considerata la coppia i18next e react-i18next, più completa ma sproporzionata per poche decine di testi.
 
 #### Metadata
   * type: specification

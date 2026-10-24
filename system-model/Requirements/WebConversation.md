@@ -4,6 +4,11 @@
 
 Il client web deve essere utilizzabile da tastiera e con un lettore di schermo in tutte le sue funzioni, secondo il profilo di accessibilità di base del client.
 
+#### Details
+Alternative: una conformità formale WCAG 2.2 AA (richiede la verifica con strumenti automatici e un controllo manuale); il rinvio dell'accessibilità a una capacità successiva (la chat resta fino ad allora inutilizzabile da tastiera e con lettore di schermo); un avviso breve come «Risposta completata.» per annunciare l'esito (obbliga a cercare la risposta).
+
+Motivo: il profilo di base rende la chat usabile da tastiera e con lettore di schermo e si verifica nei test della schermata, senza dichiarare una conformità formale; leggere direttamente il testo dell'esito non richiede testi aggiuntivi.
+
 #### Metadata
   * type: requirement
 
@@ -74,6 +79,11 @@ Nessuna eccezione è accettata per la chat web: `pnpm-workspace.yaml` non dichia
 ### Chat aperta nell'indirizzo della pagina
 
 Quando la persona apre una conversazione conservata, il client web deve riportarne l'identificativo nell'indirizzo della pagina; quando la pagina viene aperta con l'identificativo di una conversazione, deve mostrare quella conversazione come chat corrente.
+
+#### Details
+Alternative: un indirizzo sempre uguale, come all'avvio del client terminale (riporta a «Nuova chat» a ogni ricaricamento e non permette di aprire una conversazione da un link).
+
+Motivo: l'identificativo nel frammento dell'indirizzo conserva la chat aperta al ricaricamento e permette di aprirla da un link, senza librerie di routing né configurazione del server statico.
 
 #### Metadata
   * type: requirement
@@ -196,6 +206,10 @@ Quando si crea un commit in un clone della chat web con gli hook versionati atti
 Il client web deve essere distribuito come immagine container che serve i file statici dell'applicazione con un processo non privilegiato e riceve la configurazione di esecuzione dall'installazione, senza includerla nell'immagine, costruita da un contesto di build che esclude storia Git, dipendenze installate, risultati di build, configurazioni effettive, modello, test e file d'ambiente.
 
 #### Details
+Alternative: la sola pubblicazione di un archivio di file statici (lascia a chi installa la scelta e la configurazione del server web); il servizio dei file da parte del backend sulla stessa origine (evita CORS e `config.json`, ma rende l'interfaccia parte obbligatoria del backend e lega i rilasci dei due repository); Caddy come server statico (di base gira come root); un server Node.js del progetto (più codice da mantenere).
+
+Motivo: un'immagine propria con nginx non privilegiato mantiene il client web un componente facoltativo, come gli altri client, al costo di un container in più e dell'origine del client da aggiungere all'elenco del backend.
+
 Origine: baseline Reqvire «Configuration and data outside the container image», adottata: la chat web non ha dati persistenti; «Minimal container build context», adattata: il contesto non esclude file di database, che la chat web non produce, ed esclude anche configurazioni effettive, workflow, hook e script del repository.
 
 #### Metadata
@@ -230,6 +244,11 @@ Quando un'operazione del nucleo della chat web prevede un esito negativo nel pro
 
 Quando il server dei file statici del client web risponde a una richiesta, deve applicare il profilo di header di sicurezza e di cache del client web.
 
+#### Details
+Alternative: una Content-Security-Policy generata all'avvio per ammettere solo l'origine del backend (richiede uno script di avvio nel container).
+
+Motivo: con `connect-src` aperto alle origini HTTP(S) e WebSocket la configurazione di nginx resta statica, mentre l'indirizzo del backend si conosce solo a runtime.
+
 #### Metadata
   * type: requirement
 
@@ -243,6 +262,11 @@ Quando il server dei file statici del client web risponde a una richiesta, deve 
 
 Quando il client web apre la sessione conversazionale, deve presentarsi al backend con un identificativo di client stabile per quel browser e un nome leggibile, senza richiedere configurazione alla persona.
 
+#### Details
+Alternative: un'identità fissata in `config.json` (tutti i browser della casa diventano indistinguibili); un nome che include il sistema operativo (distingue meglio i dispositivi, ma rivela più dettagli al backend).
+
+Motivo: l'identità per browser distingue i dispositivi senza configurazione, al costo di cambiare quando la persona cancella i dati del sito.
+
 #### Metadata
   * type: requirement
 
@@ -254,6 +278,11 @@ Quando il client web apre la sessione conversazionale, deve presentarsi al backe
 ### Indirizzo del backend dalla configurazione di esecuzione
 
 Quando la pagina del client web viene aperta, il client deve ricavare l'indirizzo del backend dalla configurazione di esecuzione servita insieme all'applicazione; se la configurazione manca o non è valida, deve mostrare l'errore di configurazione senza contattare il backend.
+
+#### Details
+Alternative: una variabile d'ambiente del container da cui generare `config.json` all'avvio (i file statici non leggono l'ambiente: serve uno script di avvio nel container); la sola stessa origine tramite reverse proxy (nessuna configurazione, ma funziona soltanto dietro un proxy che instrada `/api` al backend).
+
+Motivo: un file di configurazione servito accanto all'applicazione e montato dall'installazione indica qualunque backend senza codice di avvio nel container.
 
 #### Metadata
   * type: requirement
@@ -328,6 +357,11 @@ Le istruzioni per gli agenti del repository devono applicare al lavoro nel repos
 ### Lingua dell'interfaccia dalla configurazione
 
 Quando la pagina del client web viene aperta, il client deve mostrare i testi dell'interfaccia nella lingua indicata dalla configurazione di esecuzione oppure, se non indicata, nella lingua supportata preferita dal browser, con l'inglese come ripiego.
+
+#### Details
+Alternative: una lingua predefinita fissa, italiana o inglese, quando `language` manca (chi non configura il campo riceve una lingua diversa da quella del proprio browser).
+
+Motivo: seguire il browser è più comodo per chi non configura il campo, al costo di mostrare lingue diverse su dispositivi diversi della stessa installazione.
 
 #### Metadata
   * type: requirement
@@ -435,6 +469,11 @@ Quando la chat web riceve `turn.failed` per un turno ammesso, deve mostrare nell
 ### Presentazione sanificata delle risposte
 
 Quando il client web mostra una risposta di Ambrogio, deve presentarla come Markdown senza interpretare l'HTML contenuto, senza caricare risorse esterne e rendendo cliccabili soltanto i link con schema ammesso; quando mostra un messaggio della persona o un messaggio di errore, deve presentarlo come testo semplice con gli a capo preservati.
+
+#### Details
+Alternative: tutte le risposte come testo semplice, come nel client terminale (nessuna dipendenza, ma elenchi e grassetti restano simboli); `markdown-it` con DOMPurify (richiede `innerHTML` e due librerie da mantenere allineate); il caricamento delle immagini remote (la pagina contatta server esterni scelti dal testo prodotto dal modello e la Content-Security-Policy si allarga); i messaggi della persona come Markdown (non restano come la persona li ha scritti).
+
+Motivo: `react-markdown` con `remark-gfm` rende la formattazione delle risposte come elementi React, senza `innerHTML` e senza risorse esterne.
 
 #### Metadata
   * type: requirement
@@ -574,6 +613,12 @@ Quando la sessione conversazionale si chiude prima dell'esito di un turno, oppur
 Il client web deve organizzare il codice per funzionalità e mantenere configurazione, identità, sessione conversazionale, consultazione HTTP e stato di ogni funzionalità in parti TypeScript indipendenti da React e dal DOM, usate dai componenti dell'interfaccia senza dipendere da essi.
 
 #### Details
+Alternative per la struttura: la divisione per natura tecnica in nucleo, interfaccia e lingue o l'organizzazione per tipo tecnico tipica dei progetti React (semplici finché l'applicazione è piccola, ma con ogni funzionalità sparsa su più cartelle); Feature-Sliced Design (rigorosa ma sovradimensionata per una sola pagina); l'architettura esagonale di backend e satellite (sproporzionata per un'interfaccia).
+
+Alternative per lo stato e gli stili: Zustand o TanStack Query (librerie di stato in più rispetto ai reducer puri collegati con `useReducer` e un contesto React); un unico foglio di stile globale o Tailwind CSS per gli stili dei componenti (stili non più accanto al componente che li usa).
+
+Motivo: le fette verticali tengono insieme logica e interfaccia di ogni funzionalità e rendono semplice aggiungerne di nuove; le parti `model/` pure conservano la logica del protocollo e dei turni paralleli provabile senza browser, al costo di passare esplicitamente le API del browser e di collegare le funzionalità soltanto in `src/app/`.
+
 Origine: baseline Reqvire «No generic sharing packages without a recorded decision», adattata: la regola riguarda le cartelle del client web, che non ha package; `src/shared/` è la cartella comune a più funzionalità registrata in «Architettura del client web».
 
 #### Metadata
@@ -590,6 +635,12 @@ Origine: baseline Reqvire «No generic sharing packages without a recorded decis
 Il client web deve essere un'applicazione a pagina singola in TypeScript e React, costruita in file statici, che in esecuzione non richiede un processo server proprio oltre al server dei file statici.
 
 #### Details
+Alternative: Svelte (bundle più piccolo, ma ecosistema meno diffuso); TypeScript senza framework (nessuna dipendenza di runtime, ma più codice manuale per lo stato dell'interfaccia).
+
+Alternative per le traduzioni: i18next con react-i18next (più completa, ma sproporzionata per poche decine di testi).
+
+Motivo: React offre l'ecosistema più diffuso e rende semplice gestire barra laterale, risposta progressiva e paginazione, al costo di un bundle più grande, irrilevante per un'applicazione domestica servita in rete locale.
+
 Origine: baseline Reqvire «Strict TypeScript compilation», adottata.
 
 #### Metadata
@@ -649,6 +700,13 @@ Quando la chat web comunica con il backend, deve usare soltanto il protocollo `a
 ### Vista a due aree della conversazione
 
 Quando la pagina del client web è aperta, il client deve mostrare l'elenco delle conversazioni e la conversazione corrente con il campo di scrittura, mantenendo visibili conversazione e campo di scrittura mentre la persona compone, invia e riceve un turno, anche su schermi stretti.
+
+#### Details
+Alternative: bloccare invio, navigazione e aggiornamento durante un turno, come nel client terminale (più semplice, ma impedisce di consultare o usare altre conversazioni mentre una risposta è lenta).
+
+Alternative per i colori: un solo tema chiaro (meno stili, ma senza rispettare la preferenza del dispositivo).
+
+Motivo: la navigazione libera sfrutta l'elaborazione parallela di conversazioni diverse garantita dal backend, al costo di conservare nella pagina lo stato di più turni contemporanei.
 
 #### Metadata
   * type: requirement
