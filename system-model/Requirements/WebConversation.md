@@ -89,7 +89,7 @@ Ambrogio deve fornire alla famiglia un client di chat testuale utilizzabile da u
 Quando viene eseguito un push sul branch principale, viene proposta una pull request, viene richiesta un'esecuzione manuale oppure un altro workflow del repository la richiama, la CI della chat web deve eseguire nel job `Web client checks` i controlli dell'intero modello sulla cartella di lavoro affiancata, il controllo TypeScript senza emissione, la suite di test, la prova di integrazione con il backend affiancato e la build, e deve fallire se uno di questi controlli fallisce.
 
 #### Details
-Il workflow `.github/workflows/ci.yml` esegue il checkout di `ambrogio-web` in `workspace/ambrogio-web`, clona `ambrogio-model` sul branch della modifica se esiste e altrimenti su `main`, scarica gli altri repository con `checkout-workspace` ed esegue `model-checks` sulla cartella `workspace`; installa le dipendenze del backend affiancato in `workspace/ambrogio-backend` e lo compila con la versione di pnpm che il backend dichiara; nella cartella `workspace/ambrogio-web` installa pnpm, gitleaks secondo il profilo di scansione dei segreti della chat web e le dipendenze su Node.js 24 ed esegue `pnpm typecheck`, `pnpm test`, che usa il backend simulato locale, `pnpm build` e la prova di integrazione con il backend affiancato (`pnpm test:backend`).
+Il workflow `.github/workflows/ci.yml` esegue il checkout di `ambrogio-web` in `workspace/ambrogio-web`, clona `ambrogio-model` sul branch della modifica se esiste e altrimenti su `main`, scarica gli altri repository con `checkout-workspace` ed esegue `model-checks` sulla cartella `workspace`; installa le dipendenze del backend affiancato in `workspace/ambrogio-backend` e lo compila, dopo aver attivato pnpm con Corepack, con la versione di pnpm che il backend dichiara; nella cartella `workspace/ambrogio-web` installa gitleaks secondo il profilo di scansione dei segreti della chat web e le dipendenze su Node.js 24, esegue l'audit delle dipendenze e poi `pnpm typecheck`, `pnpm test`, che usa il backend simulato locale, `pnpm build` e la prova di integrazione con il backend affiancato (`pnpm test:backend`).
 
 #### Metadata
   * type: requirement
@@ -222,13 +222,16 @@ Un lockfile aggiornato durante l'installazione o uno script di build eseguito se
 #### Metadata
   * type: requirement
 
+#### Contract References
+  * [Profilo di installazione con pnpm e Corepack](../../../ambrogio-model/system-model/Contracts/ModelDrivenDevelopment.md#profilo-di-installazione-con-pnpm-e-corepack)
+
 #### Relations
+  * derivedFrom: [Installazione delle dipendenze con pnpm attivato da Corepack](../../../ambrogio-model/system-model/Requirements/ModelDrivenDevelopment.md#installazione-delle-dipendenze-con-pnpm-attivato-da-corepack)
   * satisfiedBy: [ci.yml](../../.github/workflows/ci.yml)
   * satisfiedBy: [Dockerfile](../../Dockerfile)
   * satisfiedBy: [package.json](../../package.json)
   * satisfiedBy: [pnpm-lock.yaml](../../pnpm-lock.yaml)
   * satisfiedBy: [pnpm-workspace.yaml](../../pnpm-workspace.yaml)
-  * specify: [Conversazione testuale nel browser](../Capabilities/WebConversation.md#conversazione-testuale-nel-browser)
 ---
 
 ### Invio del turno dalla chat web
@@ -566,4 +569,58 @@ Quando la pagina del client web è aperta, il client deve mostrare l'elenco dell
   * satisfiedBy: [ChatApplication.module.css](../../src/app/ChatApplication.module.css)
   * satisfiedBy: [ChatApplication.tsx](../../src/app/ChatApplication.tsx)
   * specify: [Conversazione testuale nel browser](../Capabilities/WebConversation.md#conversazione-testuale-nel-browser)
+---
+
+### Controlli del modello prima del commit della chat web
+
+Quando si crea un commit in un clone della chat web con gli hook versionati attivi, l'hook `.githooks/pre-commit` del repository deve eseguire, dopo la scansione dei segreti, i controlli dell'intero modello con `model-checks` di `ambrogio-model` affiancato, e deve impedire il commit se i controlli falliscono o se `ambrogio-model` non è affiancato al repository.
+
+#### Metadata
+  * type: requirement
+
+#### Contract References
+  * [Controlli del modello nell'hook pre-commit](../../../ambrogio-model/system-model/Contracts/ModelDrivenDevelopment.md#controlli-del-modello-nellhook-pre-commit)
+  * [Controlli del modello dello spazio di lavoro](../../../ambrogio-model/system-model/Contracts/ModelDrivenDevelopment.md#controlli-del-modello-dello-spazio-di-lavoro)
+
+#### Relations
+  * derivedFrom: [Controlli del modello prima del commit](../../../ambrogio-model/system-model/Requirements/ModelDrivenDevelopment.md#controlli-del-modello-prima-del-commit)
+  * satisfiedBy: [pre-commit](../../.githooks/pre-commit)
+---
+
+### Audit delle dipendenze nella CI della chat web
+
+Quando la CI della chat web esegue il job `Web client checks`, il job deve eseguire l'audit delle dipendenze della chat web dopo la loro installazione congelata e prima del controllo TypeScript, e deve fallire se l'audit trova una vulnerabilità di gravità alta o critica non elencata fra le eccezioni accettate.
+
+#### Details
+Nessuna eccezione è accettata per la chat web: `pnpm-workspace.yaml` non dichiara `auditConfig`.
+
+#### Metadata
+  * type: requirement
+
+#### Contract References
+  * [Audit delle dipendenze con pnpm](../../../ambrogio-model/system-model/Contracts/ModelDrivenDevelopment.md#audit-delle-dipendenze-con-pnpm)
+
+#### Relations
+  * derivedFrom: [Audit delle vulnerabilità delle dipendenze](../../../ambrogio-model/system-model/Requirements/ModelDrivenDevelopment.md#audit-delle-vulnerabilità-delle-dipendenze)
+  * satisfiedBy: [ci.yml](../../.github/workflows/ci.yml)
+  * satisfiedBy: [pnpm-workspace.yaml](../../pnpm-workspace.yaml)
+---
+
+### Comando di verifica completo della chat web
+
+La chat web deve offrire lo script `verify` di `package.json`, eseguito con `pnpm verify`, che ripete in locale i controlli del job `Web client checks` nell'ordine stabilito dal comando di verifica completo e termina con esito non riuscito al primo controllo fallito.
+
+#### Details
+I comandi del punto 5 di «Comando di verifica completo con pnpm», cioè i controlli del job della CI successivi all'installazione delle dipendenze della chat web, sono nell'ordine `pnpm typecheck`, `pnpm test`, `pnpm build` e `pnpm test:backend`.
+
+#### Metadata
+  * type: requirement
+
+#### Contract References
+  * [Comando di verifica completo con pnpm](../../../ambrogio-model/system-model/Contracts/ModelDrivenDevelopment.md#comando-di-verifica-completo-con-pnpm)
+
+#### Relations
+  * derivedFrom: [Comando di verifica completo](../../../ambrogio-model/system-model/Requirements/ModelDrivenDevelopment.md#comando-di-verifica-completo)
+  * satisfiedBy: [package.json](../../package.json)
+  * satisfiedBy: [AGENTS.md](../../AGENTS.md)
 ---
