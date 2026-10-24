@@ -389,7 +389,7 @@ La prova passa se la configurazione valida produce l'URL base e la lingua attesi
 Con una funzione di lettura HTTP controllata, leggere elenco e storico e verificare gli indirizzi `api/v1/conversations` e `api/v1/conversations/<id>`; far rispondere errori Problem Details con `type` `/problems/conversation-not-found`, `/problems/invalid-pagination`, `about:blank` e un tipo sconosciuto, con `title` e `detail` marcati, e un errore con corpo non Problem Details; presentare gli esiti in italiano e in inglese.
 
 #### Details
-La prova passa se le letture usano soltanto le rotte `v1`, la conversazione inesistente mostra «Conversazione non trovata.» o «Conversation not found.», ogni altro errore mostra il testo dell'errore HTTP del backend con lo stato, e nessun testo presentato contiene `title` o `detail` del backend. Fallisce se il client usa le rotte senza versione o se il testo dipende da membri diversi da `type`.
+La prova passa se le letture usano soltanto le rotte `v1`, la conversazione inesistente mostra «Conversazione non trovata.» o «Conversation not found.», ogni altro errore mostra il testo dell'errore HTTP del backend con lo stato, e nessun testo presentato contiene `title` o `detail` del backend. Fallisce se il client usa rotte fuori da `/api/v1/` o se il testo dipende da membri diversi da `type`.
 
 #### Metadata
   * type: test-verification
