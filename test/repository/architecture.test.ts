@@ -2,6 +2,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { basename, dirname, join, relative, resolve, sep } from 'node:path';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { repositoryRoot } from '../support/repository-files';
+import { scan, specifiers, type Scanned } from '../support/source-imports';
 
 // Browser globals that the core never names: src/app/ provides the browser APIs as dependencies.
 // fetch, history and location are left to the architecture analysis, because telling them apart
@@ -9,62 +10,6 @@ import { repositoryRoot } from '../support/repository-files';
 const browserGlobal = /(?<![\w$.])(?:document|window|navigator|localStorage|sessionStorage|crypto)(?![\w$])(?!\s*\??:)/g;
 const webSocketConstruction = /\bnew\s+WebSocket\b/g;
 const reactPackage = /^react(?:$|[-/])/;
-
-/**
- * Source text without comments, with every string literal replaced by `'§<index>'` and every
- * template literal by `` `§` ``, so that regular expressions see neither comments nor quoted text.
- */
-type Scanned = { readonly code: string; readonly strings: readonly string[] };
-
-function scan(source: string): Scanned {
-  const strings: string[] = [];
-  let code = '';
-  let index = 0;
-  const lastSignificant = (): string => code.trimEnd().slice(-1);
-  while (index < source.length) {
-    const char = source[index] ?? '';
-    const next = source[index + 1] ?? '';
-    if (char === '/' && next === '/') {
-      while (index < source.length && source[index] !== '\n') index++;
-    } else if (char === '/' && next === '*') {
-      const close = source.indexOf('*/', index + 2);
-      index = close < 0 ? source.length : close + 2;
-      code += ' ';
-    } else if (char === "'" || char === '"' || char === '`') {
-      let value = '';
-      index++;
-      while (index < source.length && source[index] !== char) {
-        if (source[index] === '\\') { value += source.slice(index, index + 2); index += 2; } else { value += source[index]; index++; }
-      }
-      index++;
-      if (char === '`') code += '`§`';
-      else { code += `'§${strings.length}'`; strings.push(value); }
-    } else if (char === '/' && (lastSignificant() === '' || '(,=:[!&|?{};'.includes(lastSignificant()))) {
-      // A regular expression literal: skip it so that quotes or slashes inside it are not misread.
-      let inClass = false;
-      index++;
-      while (index < source.length && (inClass || source[index] !== '/')) {
-        if (source[index] === '\\') index++;
-        else if (source[index] === '[') inClass = true;
-        else if (source[index] === ']') inClass = false;
-        index++;
-      }
-      index++;
-      while (/[a-z]/.test(source[index] ?? '')) index++;
-      code += '/§/';
-    } else {
-      code += char;
-      index++;
-    }
-  }
-  return { code, strings };
-}
-
-/** Specifiers of import ... from, export ... from, side-effect imports and literal dynamic imports. */
-function specifiers({ code, strings }: Scanned): string[] {
-  const pattern = /\b(?:import|export)\s[^;'`]*?\bfrom\s*'§(\d+)'|\bimport\s*'§(\d+)'|\bimport\s*\(\s*'§(\d+)'\s*\)/g;
-  return [...code.matchAll(pattern)].map(match => strings[Number(match[1] ?? match[2] ?? match[3])] ?? '');
-}
 
 function browserGlobalsIn({ code }: Scanned): string[] {
   return [...code.matchAll(browserGlobal), ...code.matchAll(webSocketConstruction)].map(match => match[0]);

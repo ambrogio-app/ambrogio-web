@@ -15,20 +15,23 @@ Il client web deve essere utilizzabile da tastiera e con un lettore di schermo i
   * specify: [Conversazione testuale nel browser](../Capabilities/WebConversation.md#conversazione-testuale-nel-browser)
 ---
 
-### Anteprima delle conversazioni nella barra laterale
+### Anteprima delle conversazioni nella barra laterale della chat web
 
-Quando il client web mostra una pagina dell'elenco conversazioni, deve presentare per ogni conversazione visibile un'anteprima del primo messaggio della persona ottenuta dallo storico HTTP pubblico; se uno storico non è disponibile, deve mantenere selezionabile la conversazione mostrando un identificativo abbreviato.
+Quando la chat web mostra una pagina dell'elenco delle conversazioni nella barra laterale, deve presentare l'anteprima di ogni conversazione visibile e, per una conversazione con lo storico non disponibile, l'identificativo abbreviato nella forma stabilita dalla schermata web della chat.
 
 #### Metadata
   * type: requirement
 
 #### Contract References
+  * [Risposta HTTP dell'elenco conversazioni](../../../ambrogio-backend/system-model/Contracts/FamilyConversation.md#risposta-http-dellelenco-conversazioni)
+  * [Risposta HTTP dello storico conversazionale](../../../ambrogio-backend/system-model/Contracts/FamilyConversation.md#risposta-http-dello-storico-conversazionale)
   * [Schermata web della chat](../Contracts/WebConversation.md#schermata-web-della-chat)
 
 #### Relations
+  * derivedFrom: [Anteprima delle conversazioni nell'elenco dei client testuali](../../../ambrogio-model/system-model/Requirements/TextConversation.md#anteprima-delle-conversazioni-nellelenco-dei-client-testuali)
   * satisfiedBy: [conversation-list.ts](../../src/features/conversations/model/conversation-list.ts)
   * satisfiedBy: [Sidebar.tsx](../../src/features/conversations/ui/Sidebar.tsx)
-  * specify: [Conversazione testuale nel browser](../Capabilities/WebConversation.md#conversazione-testuale-nel-browser)
+  * specify: [Conversazione familiare](../../../ambrogio-model/system-model/Capabilities/Product.md#conversazione-familiare)
 ---
 
 ### Apertura e continuazione di una conversazione conservata
@@ -39,7 +42,8 @@ Quando la persona sceglie una conversazione nella barra laterale, il client web 
   * type: requirement
 
 #### Contract References
-  * [Contratti pubblici del backend Ambrogio](../Contracts/WebConversation.md#contratti-pubblici-del-backend-ambrogio)
+  * [Sessione del protocollo Ambrogio v1](../../../ambrogio-backend/system-model/Contracts/ConversationProtocol.md#sessione-del-protocollo-ambrogio-v1)
+  * [Risposta HTTP dello storico conversazionale](../../../ambrogio-backend/system-model/Contracts/FamilyConversation.md#risposta-http-dello-storico-conversazionale)
   * [Schermata web della chat](../Contracts/WebConversation.md#schermata-web-della-chat)
 
 #### Relations
@@ -69,7 +73,9 @@ Ambrogio deve fornire alla famiglia un client di chat testuale utilizzabile da u
   * type: requirement
 
 #### Contract References
-  * [Contratti pubblici del backend Ambrogio](../Contracts/WebConversation.md#contratti-pubblici-del-backend-ambrogio)
+  * [Sessione del protocollo Ambrogio v1](../../../ambrogio-backend/system-model/Contracts/ConversationProtocol.md#sessione-del-protocollo-ambrogio-v1)
+  * [Risposta HTTP dell'elenco conversazioni](../../../ambrogio-backend/system-model/Contracts/FamilyConversation.md#risposta-http-dellelenco-conversazioni)
+  * [Risposta HTTP dello storico conversazionale](../../../ambrogio-backend/system-model/Contracts/FamilyConversation.md#risposta-http-dello-storico-conversazionale)
   * [Schermata web della chat](../Contracts/WebConversation.md#schermata-web-della-chat)
 
 #### Relations
@@ -78,112 +84,57 @@ Ambrogio deve fornire alla famiglia un client di chat testuale utilizzabile da u
   * specify: [Conversazione testuale nel browser](../Capabilities/WebConversation.md#conversazione-testuale-nel-browser)
 ---
 
-### Compatibilità con l'API conversazionale del backend
-
-Quando il client web comunica con il backend Ambrogio, deve usare il protocollo conversazionale e le API HTTP pubbliche della versione di backend dichiarata come dipendenza, senza accedere ai file o ai moduli interni del server.
-
-#### Metadata
-  * type: requirement
-
-#### Relations
-  * satisfiedBy: [conversations-api.ts](../../src/features/conversations/model/conversations-api.ts)
-  * satisfiedBy: [conversation-session.ts](../../src/features/session/model/conversation-session.ts)
-  * specify: [Conversazione testuale nel browser](../Capabilities/WebConversation.md#conversazione-testuale-nel-browser)
----
-
 ### Controlli CI del client web
 
-Quando viene eseguito un push sul branch principale, viene proposta una pull request, viene richiesta un'esecuzione manuale oppure un altro workflow del repository la richiama, la CI del client web deve eseguire la validazione e il lint del modello Reqvire, il controllo TypeScript senza emissione, la suite di test e la build, e deve fallire se uno di questi controlli fallisce.
+Quando viene eseguito un push sul branch principale, viene proposta una pull request, viene richiesta un'esecuzione manuale oppure un altro workflow del repository la richiama, la CI della chat web deve eseguire nel job `Web client checks` i controlli dell'intero modello sulla cartella di lavoro affiancata, il controllo TypeScript senza emissione, la suite di test, la prova di integrazione con il backend affiancato e la build, e deve fallire se uno di questi controlli fallisce.
 
 #### Details
-Il workflow `.github/workflows/ci.yml` installa pnpm, gitleaks secondo il profilo di scansione dei segreti e le dipendenze su Node.js 24 ed esegue, in quest'ordine, Reqvire 1.3.2 `validate` e `lint`, con il lint che fallisce se restano correzioni automatiche o elementi da rivedere; lo script di integrità del modello; `pnpm typecheck`; `pnpm test`, che usa il backend simulato locale; `pnpm build`. La prova di integrazione contro la revisione backend fissata (`pnpm test:backend`) richiede un checkout del backend e resta fuori dalla CI.
+Il workflow `.github/workflows/ci.yml` esegue il checkout di `ambrogio-web` in `workspace/ambrogio-web`, clona `ambrogio-model` sul branch della modifica se esiste e altrimenti su `main`, scarica gli altri repository con `checkout-workspace` ed esegue `model-checks` sulla cartella `workspace`; installa le dipendenze del backend affiancato in `workspace/ambrogio-backend` e lo compila con la versione di pnpm che il backend dichiara; nella cartella `workspace/ambrogio-web` installa pnpm, gitleaks secondo il profilo di scansione dei segreti della chat web e le dipendenze su Node.js 24 ed esegue `pnpm typecheck`, `pnpm test`, che usa il backend simulato locale, `pnpm build` e la prova di integrazione con il backend affiancato (`pnpm test:backend`).
 
 #### Metadata
   * type: requirement
 
 #### Contract References
+  * [Checkout affiancato dello spazio di lavoro](../../../ambrogio-model/system-model/Contracts/ModelDrivenDevelopment.md#checkout-affiancato-dello-spazio-di-lavoro)
+  * [Controlli del modello dello spazio di lavoro](../../../ambrogio-model/system-model/Contracts/ModelDrivenDevelopment.md#controlli-del-modello-dello-spazio-di-lavoro)
   * [Profilo di installazione delle dipendenze del client web](../Contracts/WebConversation.md#profilo-di-installazione-delle-dipendenze-del-client-web)
-  * [Profilo di scansione dei segreti con gitleaks](../Contracts/WebConversation.md#profilo-di-scansione-dei-segreti-con-gitleaks)
+  * [Profilo di scansione dei segreti della chat web](../Contracts/WebConversation.md#profilo-di-scansione-dei-segreti-della-chat-web)
 
 #### Relations
+  * derivedFrom: [Controlli CI dei repository di Ambrogio](../../../ambrogio-model/system-model/Requirements/ModelDrivenDevelopment.md#controlli-ci-dei-repository-di-ambrogio)
   * satisfiedBy: [ci.yml](../../.github/workflows/ci.yml)
-  * specify: [Conversazione testuale nel browser](../Capabilities/WebConversation.md#conversazione-testuale-nel-browser)
+  * specify: [Sviluppo governato dal modello](../../../ambrogio-model/system-model/Capabilities/Engineering.md#sviluppo-governato-dal-modello)
 ---
 
-### Controlli obbligatori prima del merge
+### Controlli obbligatori prima del merge della chat web
 
-Quando una modifica viene integrata nel branch principale, il repository GitHub deve accettarla soltanto tramite una pull request i cui controlli della CI e scansione dei segreti sono superati, e deve rifiutare il push diretto, la riscrittura forzata e la cancellazione del branch principale.
-
-#### Details
-La regola vale per chiunque, amministratori compresi: ogni modifica passa da un branch e da una pull request, così che CI e scansione dei segreti precedano sempre l'integrazione.
-
-#### Metadata
-  * type: requirement
-
-#### Relations
-  * specify: [Conversazione testuale nel browser](../Capabilities/WebConversation.md#conversazione-testuale-nel-browser)
----
-
-### Controllo automatico dell'integrità del modello
-
-Quando la CI del repository esegue la validazione e il lint del modello Reqvire, deve eseguire anche lo script di integrità del modello e deve fallire se lo script segnala una violazione o non riesce a eseguire.
-
-#### Details
-Il controllo copre le regole di integrità verificabili sul testo e sui file; `validate` e `lint` di Reqvire non le controllano.
-
-#### Metadata
-  * type: requirement
-
-#### Relations
-  * satisfiedBy: [ci.yml](../../.github/workflows/ci.yml)
-  * satisfiedBy: [check-model.mjs](../../scripts/check-model.mjs)
-  * specify: [Conversazione testuale nel browser](../Capabilities/WebConversation.md#conversazione-testuale-nel-browser)
----
-
-### Controllo dei segreti prima del commit
-
-Quando si crea un commit in un clone del repository con gli hook versionati attivi, il controllo pre-commit deve scansionare con gitleaks le modifiche in staging e deve impedire il commit se rileva un segreto oppure se gitleaks non è disponibile.
+Il repository GitHub della chat web deve proteggere il branch principale con il ruleset della chat web, che richiede i controlli della CI e della scansione dei segreti del repository.
 
 #### Metadata
   * type: requirement
 
 #### Contract References
-  * [Profilo di scansione dei segreti con gitleaks](../Contracts/WebConversation.md#profilo-di-scansione-dei-segreti-con-gitleaks)
+  * [Ruleset del branch principale](../../../ambrogio-model/system-model/Contracts/ModelDrivenDevelopment.md#ruleset-del-branch-principale)
 
 #### Relations
+  * derivedFrom: [Controlli obbligatori prima del merge](../../../ambrogio-model/system-model/Requirements/ModelDrivenDevelopment.md#controlli-obbligatori-prima-del-merge)
+  * specify: [Sviluppo governato dal modello](../../../ambrogio-model/system-model/Capabilities/Engineering.md#sviluppo-governato-dal-modello)
+---
+
+### Controllo dei segreti prima del commit della chat web
+
+Quando si crea un commit in un clone della chat web con gli hook versionati attivi, l'hook `.githooks/pre-commit` del repository deve eseguire il controllo dei segreti secondo il profilo di scansione dei segreti della chat web.
+
+#### Metadata
+  * type: requirement
+
+#### Contract References
+  * [Profilo di scansione dei segreti della chat web](../Contracts/WebConversation.md#profilo-di-scansione-dei-segreti-della-chat-web)
+
+#### Relations
+  * derivedFrom: [Controllo dei segreti prima del commit](../../../ambrogio-model/system-model/Requirements/ModelDrivenDevelopment.md#controllo-dei-segreti-prima-del-commit)
   * satisfiedBy: [pre-commit](../../.githooks/pre-commit)
-  * specify: [Conversazione testuale nel browser](../Capabilities/WebConversation.md#conversazione-testuale-nel-browser)
----
-
-### Decisioni sostituite rimosse nella stessa modifica
-
-Quando una decisione ne sostituisce un'altra, la modifica che registra la nuova decisione deve aggiornare o rimuovere ogni requisito, contratto e verifica che afferma la decisione sostituita, e i testi di requisiti, contratti e verifiche non devono riportare date, storia delle decisioni o esiti di esecuzioni.
-
-#### Details
-Il modello descrive gli obblighi validi oggi e come verificarli; la storia è conservata da Git. Decisioni datate accumulate nei contratti convivono con elementi che affermano ancora le decisioni sostituite. Gli esiti dei test sono dati dalla CI; l'esito di una verifica manuale si registra nel messaggio del commit o nella pull request che la esegue, non nel modello.
-
-#### Metadata
-  * type: requirement
-
-#### Contract References
-  * [Script di integrità del modello](../Contracts/WebConversation.md#script-di-integrità-del-modello)
-
-#### Relations
-  * specify: [Conversazione testuale nel browser](../Capabilities/WebConversation.md#conversazione-testuale-nel-browser)
----
-
-### Dipendenze fra contratti dichiarate come riferimenti
-
-Quando il contenuto di un contratto dipende da un contratto posseduto da un altro requisito, il requisito proprietario del contratto dipendente deve dichiarare una Contract Reference al contratto da cui dipende, e il contratto dipendente non deve ripetere il contenuto di quel contratto.
-
-#### Details
-Le Contract References propagano l'analisi di impatto: una modifica del contratto riferito segnala il contratto dipendente per la revisione. Un contratto che ripete un fatto posseduto da un altro requisito resta invariato quando quel fatto cambia, e il modello finisce per contraddirsi senza che l'analisi di impatto lo segnali.
-
-#### Metadata
-  * type: requirement
-
-#### Relations
-  * specify: [Conversazione testuale nel browser](../Capabilities/WebConversation.md#conversazione-testuale-nel-browser)
+  * specify: [Sviluppo governato dal modello](../../../ambrogio-model/system-model/Capabilities/Engineering.md#sviluppo-governato-dal-modello)
 ---
 
 ### Distribuzione come immagine Docker
@@ -202,9 +153,9 @@ Il client web deve essere distribuito come immagine container che serve i file s
   * specify: [Conversazione testuale nel browser](../Capabilities/WebConversation.md#conversazione-testuale-nel-browser)
 ---
 
-### Esiti previsti come valori tipizzati
+### Esiti previsti come valori tipizzati nella chat web
 
-Quando un'operazione del nucleo del client web prevede un esito negativo nel proprio contratto, deve rappresentarlo come valore tipizzato distinguibile dal successo, riservando le eccezioni ai guasti inattesi.
+Quando un'operazione del nucleo della chat web prevede un esito negativo nel proprio contratto, deve restituirlo con il tipo `Result` dell'architettura del client web.
 
 #### Metadata
   * type: requirement
@@ -213,42 +164,9 @@ Quando un'operazione del nucleo del client web prevede un esito negativo nel pro
   * [Architettura del client web](../Contracts/WebConversation.md#architettura-del-client-web)
 
 #### Relations
+  * derivedFrom: [Esiti previsti come valori tipizzati](../../../ambrogio-model/system-model/Requirements/CodeArchitecture.md#esiti-previsti-come-valori-tipizzati)
   * satisfiedBy: [result.ts](../../src/shared/result.ts)
-  * specify: [Conversazione testuale nel browser](../Capabilities/WebConversation.md#conversazione-testuale-nel-browser)
----
-
-### File di governo collegati al modello
-
-Ogni workflow di CI, hook Git, file di build del container, esempio Compose, file di esclusione, configurazione del gestore di pacchetti, del compilatore o del runner di test e script del repository deve essere riferito da almeno un requisito o una verifica del modello.
-
-#### Details
-Un file che codifica decisioni ingegneristiche senza un collegamento al modello cambia senza che alcun obbligo lo segnali, e le decisioni presenti solo nei file divergono fra file simili, per esempio fra i workflow di controllo e quello di pubblicazione.
-
-#### Metadata
-  * type: requirement
-
-#### Contract References
-  * [Script di integrità del modello](../Contracts/WebConversation.md#script-di-integrità-del-modello)
-
-#### Relations
-  * specify: [Conversazione testuale nel browser](../Capabilities/WebConversation.md#conversazione-testuale-nel-browser)
----
-
-### Formulazione normativa degli obblighi
-
-Gli enunciati dei requisiti e i testi dei contratti devono esprimere gli obblighi con «deve» o «devono» e non devono usare `può`, `possono`, `potrebbe`, `potrebbero`, `dovrebbe`, `dovrebbero` o `eventualmente`; un'opzione lasciata a una parte deve essere espressa nominando la parte che sceglie.
-
-#### Details
-Il testo in code span, i messaggi citati e i nomi di elementi tra «» non sono formulazione dell'obbligo. Le sezioni Details dei requisiti sono indicazioni e non vengono controllate. Una formula permissiva rende ambiguo se il comportamento è obbligatorio, facoltativo o scelto da qualcuno, e il codice e il modello finiscono per darne letture diverse.
-
-#### Metadata
-  * type: requirement
-
-#### Contract References
-  * [Script di integrità del modello](../Contracts/WebConversation.md#script-di-integrità-del-modello)
-
-#### Relations
-  * specify: [Conversazione testuale nel browser](../Capabilities/WebConversation.md#conversazione-testuale-nel-browser)
+  * specify: [Architettura del codice](../../../ambrogio-model/system-model/Capabilities/Engineering.md#architettura-del-codice)
 ---
 
 ### Header di sicurezza del server statico
@@ -283,6 +201,10 @@ Quando la pagina del client web viene aperta, il client deve ricavare l'indirizz
 #### Metadata
   * type: requirement
 
+#### Contract References
+  * [Controllo dell'origine all'apertura della sessione](../../../ambrogio-backend/system-model/Contracts/ConversationProtocol.md#controllo-dellorigine-allapertura-della-sessione)
+  * [Politica CORS del componente HTTP](../../../ambrogio-backend/system-model/Contracts/ServerFoundation.md#politica-cors-del-componente-http)
+
 #### Relations
   * satisfiedBy: [.gitignore](../../.gitignore)
   * satisfiedBy: [App.tsx](../../src/app/App.tsx)
@@ -309,19 +231,38 @@ Un lockfile aggiornato durante l'installazione o uno script di build eseguito se
   * specify: [Conversazione testuale nel browser](../Capabilities/WebConversation.md#conversazione-testuale-nel-browser)
 ---
 
-### Invio del turno sul canale conversazionale
+### Invio del turno dalla chat web
 
-Quando la famiglia invia un turno testuale dal client web, il client deve trasmetterlo al backend come richiesta testuale del protocollo conversazionale `ambrogio.v1`, chiedendo la risposta in testo e indicando la conversazione corrente quando la continua.
+Quando la famiglia invia un turno dalla chat web, la chat web deve trasmetterlo sull'unica sessione `ambrogio.v1` della pagina, secondo la sessione `ambrogio.v1` del client web.
 
 #### Metadata
   * type: requirement
 
 #### Contract References
-  * [Contratti pubblici del backend Ambrogio](../Contracts/WebConversation.md#contratti-pubblici-del-backend-ambrogio)
+  * [Errori ed estensioni del protocollo Ambrogio v1](../../../ambrogio-backend/system-model/Contracts/ConversationProtocol.md#errori-ed-estensioni-del-protocollo-ambrogio-v1)
+  * [Esiti del turno nel protocollo Ambrogio v1](../../../ambrogio-backend/system-model/Contracts/ConversationProtocol.md#esiti-del-turno-nel-protocollo-ambrogio-v1)
+  * [Schema JSON del protocollo Ambrogio v1](../../../ambrogio-backend/system-model/Contracts/ConversationProtocol.md#schema-json-del-protocollo-ambrogio-v1)
+  * [Sessione del protocollo Ambrogio v1](../../../ambrogio-backend/system-model/Contracts/ConversationProtocol.md#sessione-del-protocollo-ambrogio-v1)
+  * [Trasmissione in ingresso del protocollo Ambrogio v1](../../../ambrogio-backend/system-model/Contracts/ConversationProtocol.md#trasmissione-in-ingresso-del-protocollo-ambrogio-v1)
+  * [Trasmissione in uscita del protocollo Ambrogio v1](../../../ambrogio-backend/system-model/Contracts/ConversationProtocol.md#trasmissione-in-uscita-del-protocollo-ambrogio-v1)
 
 #### Relations
+  * derivedFrom: [Invio del turno testuale sul canale conversazionale](../../../ambrogio-model/system-model/Requirements/TextConversation.md#invio-del-turno-testuale-sul-canale-conversazionale)
   * satisfiedBy: [conversation-session.ts](../../src/features/session/model/conversation-session.ts)
-  * specify: [Conversazione testuale nel browser](../Capabilities/WebConversation.md#conversazione-testuale-nel-browser)
+  * specify: [Conversazione familiare](../../../ambrogio-model/system-model/Capabilities/Product.md#conversazione-familiare)
+---
+
+### Istruzioni per gli agenti della chat web
+
+Le istruzioni per gli agenti del repository devono applicare al lavoro nel repository le regole di processo di `ambrogio-model`, rimandando a `ambrogio-model/AGENTS.md` per le regole comuni e aggiungendo soltanto le indicazioni proprie del repository.
+
+#### Metadata
+  * type: requirement
+
+#### Relations
+  * derivedFrom: [Ordine di lavoro guidato dal modello](../../../ambrogio-model/system-model/Requirements/ModelDrivenDevelopment.md#ordine-di-lavoro-guidato-dal-modello)
+  * satisfiedBy: [AGENTS.md](../../AGENTS.md)
+  * specify: [Sviluppo governato dal modello](../../../ambrogio-model/system-model/Capabilities/Engineering.md#sviluppo-governato-dal-modello)
 ---
 
 ### Lingua dell'interfaccia dalla configurazione
@@ -354,9 +295,9 @@ Mentre un turno è in corso in una conversazione, il client web deve consentire 
   * specify: [Conversazione testuale nel browser](../Capabilities/WebConversation.md#conversazione-testuale-nel-browser)
 ---
 
-### Nuova chat iniziale nella barra laterale
+### Nuova chat iniziale della chat web
 
-All'apertura della pagina, il client web deve aprire una nuova chat locale come conversazione corrente e mostrarla come prima voce della barra laterale; dopo l'invio del primo messaggio, deve usare l'anteprima di quel messaggio come nome della voce e continuare a mostrare la stessa chat.
+All'apertura della pagina, la chat web deve mostrare la nuova chat locale come voce «Nuova chat» in cima alla barra laterale, secondo la schermata web della chat.
 
 #### Metadata
   * type: requirement
@@ -365,39 +306,45 @@ All'apertura della pagina, il client web deve aprire una nuova chat locale come 
   * [Schermata web della chat](../Contracts/WebConversation.md#schermata-web-della-chat)
 
 #### Relations
+  * derivedFrom: [Nuova chat iniziale nei client testuali](../../../ambrogio-model/system-model/Requirements/TextConversation.md#nuova-chat-iniziale-nei-client-testuali)
   * satisfiedBy: [ChatApplication.tsx](../../src/app/ChatApplication.tsx)
   * satisfiedBy: [chat-state.ts](../../src/features/chat/model/chat-state.ts)
-  * specify: [Conversazione testuale nel browser](../Capabilities/WebConversation.md#conversazione-testuale-nel-browser)
+  * specify: [Conversazione familiare](../../../ambrogio-model/system-model/Capabilities/Product.md#conversazione-familiare)
 ---
 
-### Presentazione del rifiuto del turno
+### Presentazione del rifiuto del turno nella chat web
 
-Quando il client web riceve `turn.rejected` per un turno, deve mostrare il messaggio pubblico contenuto in `message` come esito di errore del turno nella chat.
+Quando la chat web riceve `turn.rejected` per un turno, deve mostrare nella chat il messaggio pubblico contenuto in `message` come esito di errore del turno, secondo la sessione `ambrogio.v1` del client web.
 
 #### Metadata
   * type: requirement
 
 #### Contract References
+  * [Esiti del turno nel protocollo Ambrogio v1](../../../ambrogio-backend/system-model/Contracts/ConversationProtocol.md#esiti-del-turno-nel-protocollo-ambrogio-v1)
+  * [Motivi di rifiuto del turno](../../../ambrogio-backend/system-model/Contracts/ConversationProtocol.md#motivi-di-rifiuto-del-turno)
   * [Sessione ambrogio.v1 del client web](../Contracts/WebConversation.md#sessione-ambrogiov1-del-client-web)
 
 #### Relations
+  * derivedFrom: [Presentazione del rifiuto del turno da parte del client](../../../ambrogio-backend/system-model/Requirements/ConversationProtocol.md#presentazione-del-rifiuto-del-turno-da-parte-del-client)
   * satisfiedBy: [ChatPanel.tsx](../../src/features/chat/ui/ChatPanel.tsx)
-  * specify: [Conversazione testuale nel browser](../Capabilities/WebConversation.md#conversazione-testuale-nel-browser)
+  * specify: [Conversazione familiare](../../../ambrogio-model/system-model/Capabilities/Product.md#conversazione-familiare)
 ---
 
-### Presentazione dell'errore dopo l'ammissione
+### Presentazione dell'errore dopo l'ammissione nella chat web
 
-Quando il client web riceve `turn.failed` per un turno ammesso, deve mostrare il messaggio pubblico contenuto in `message` come esito di errore del turno, sostituendo gli eventuali frammenti di risposta già mostrati per quel turno.
+Quando la chat web riceve `turn.failed` per un turno ammesso, deve mostrare nella chat il messaggio pubblico contenuto in `message` come esito di errore del turno, secondo la sessione `ambrogio.v1` del client web.
 
 #### Metadata
   * type: requirement
 
 #### Contract References
+  * [Esiti del turno nel protocollo Ambrogio v1](../../../ambrogio-backend/system-model/Contracts/ConversationProtocol.md#esiti-del-turno-nel-protocollo-ambrogio-v1)
   * [Sessione ambrogio.v1 del client web](../Contracts/WebConversation.md#sessione-ambrogiov1-del-client-web)
 
 #### Relations
+  * derivedFrom: [Presentazione dell'errore dopo l'ammissione da parte del client](../../../ambrogio-backend/system-model/Requirements/ConversationProtocol.md#presentazione-dellerrore-dopo-lammissione-da-parte-del-client)
   * satisfiedBy: [ChatPanel.tsx](../../src/features/chat/ui/ChatPanel.tsx)
-  * specify: [Conversazione testuale nel browser](../Capabilities/WebConversation.md#conversazione-testuale-nel-browser)
+  * specify: [Conversazione familiare](../../../ambrogio-model/system-model/Capabilities/Product.md#conversazione-familiare)
 ---
 
 ### Presentazione sanificata delle risposte
@@ -415,84 +362,61 @@ Quando il client web mostra una risposta di Ambrogio, deve presentarla come Mark
 
 ### Privilegi minimi dei workflow GitHub Actions
 
-I workflow GitHub Actions del repository devono concedere a ogni job soltanto i permessi del token necessari, eseguire azioni esterne fissate al commit, limitare la durata di ogni job, non conservare le credenziali del checkout e impedire che due pubblicazioni dello stesso tag si sovrappongano.
-
-#### Details
-Un'azione indicata con un tag mobile o un token con permessi ampi espone il repository e il registro delle immagini a codice di terzi modificato dopo l'adozione.
+I workflow GitHub Actions della chat web devono seguire il profilo di sicurezza dei workflow GitHub Actions della chat web e impedire che due pubblicazioni dello stesso tag si sovrappongano.
 
 #### Metadata
   * type: requirement
 
+#### Contract References
+  * [Profilo comune dei workflow GitHub Actions](../../../ambrogio-model/system-model/Contracts/ModelDrivenDevelopment.md#profilo-comune-dei-workflow-github-actions)
+
 #### Relations
+  * derivedFrom: [Workflow GitHub Actions con privilegi e durata limitati](../../../ambrogio-model/system-model/Requirements/ModelDrivenDevelopment.md#workflow-github-actions-con-privilegi-e-durata-limitati)
   * satisfiedBy: [ci.yml](../../.github/workflows/ci.yml)
   * satisfiedBy: [publish-image.yml](../../.github/workflows/publish-image.yml)
   * satisfiedBy: [secret-scan.yml](../../.github/workflows/secret-scan.yml)
-  * specify: [Conversazione testuale nel browser](../Capabilities/WebConversation.md#conversazione-testuale-nel-browser)
+  * specify: [Sviluppo governato dal modello](../../../ambrogio-model/system-model/Capabilities/Engineering.md#sviluppo-governato-dal-modello)
 ---
 
 ### Pubblicazione dell'immagine Docker
 
-Quando viene creato un tag di release `vMAJOR.MINOR.PATCH`, il repository deve pubblicare l'immagine del client web per `linux/amd64` e `linux/arm64` soltanto dopo che CI, scansione dei segreti e verifica di entrambe le immagini sono riuscite.
+Quando viene creato un tag di release `vMAJOR.MINOR.PATCH`, il repository deve pubblicare l'immagine della chat web per `linux/amd64` e `linux/arm64` soltanto dopo che CI, scansione dei segreti e verifica di entrambe le immagini sono riuscite.
 
 #### Metadata
   * type: requirement
 
 #### Contract References
   * [Profilo dell'immagine Docker del client web](../Contracts/WebConversation.md#profilo-dellimmagine-docker-del-client-web)
-  * [Profilo di scansione dei segreti con gitleaks](../Contracts/WebConversation.md#profilo-di-scansione-dei-segreti-con-gitleaks)
+  * [Profilo di scansione dei segreti della chat web](../Contracts/WebConversation.md#profilo-di-scansione-dei-segreti-della-chat-web)
   * [Profilo di sicurezza dei workflow GitHub Actions](../Contracts/WebConversation.md#profilo-di-sicurezza-dei-workflow-github-actions)
 
 #### Relations
+  * derivedFrom: [Pubblicazione delle immagini di release](../../../ambrogio-model/system-model/Requirements/HomelabInstallation.md#pubblicazione-delle-immagini-di-release)
   * satisfiedBy: [publish-image.yml](../../.github/workflows/publish-image.yml)
-  * specify: [Conversazione testuale nel browser](../Capabilities/WebConversation.md#conversazione-testuale-nel-browser)
+  * specify: [Installazione nell'homelab](../../../ambrogio-model/system-model/Capabilities/Engineering.md#installazione-nellhomelab)
 ---
 
-### Repository autonomo del client web
+### Riconoscimento del completamento della risposta nella chat web
 
-Il client web deve essere sviluppato e versionato nel repository `ambrogio-web`, con workspace Reqvire canonico alla propria radice e decisioni tecniche del client registrate nel proprio modello.
-
-#### Metadata
-  * type: requirement
-
-#### Relations
-  * satisfiedBy: [README.md](../../README.md)
-  * specify: [Conversazione testuale nel browser](../Capabilities/WebConversation.md#conversazione-testuale-nel-browser)
----
-
-### Riconoscimento del completamento della risposta testuale
-
-Quando un turno del client web si conclude, il client deve considerare la risposta completata correttamente soltanto se ha ricevuto `turn.completed` per quel turno.
+Quando un turno della chat web si conclude, la chat web deve considerare la risposta completata correttamente soltanto se ha ricevuto `turn.completed` per quel turno, secondo la sessione `ambrogio.v1` del client web.
 
 #### Metadata
   * type: requirement
 
 #### Contract References
+  * [Esiti del turno nel protocollo Ambrogio v1](../../../ambrogio-backend/system-model/Contracts/ConversationProtocol.md#esiti-del-turno-nel-protocollo-ambrogio-v1)
+  * [Trasmissione in uscita del protocollo Ambrogio v1](../../../ambrogio-backend/system-model/Contracts/ConversationProtocol.md#trasmissione-in-uscita-del-protocollo-ambrogio-v1)
   * [Sessione ambrogio.v1 del client web](../Contracts/WebConversation.md#sessione-ambrogiov1-del-client-web)
 
 #### Relations
+  * derivedFrom: [Riconoscimento dell'esito riuscito del turno da parte del client](../../../ambrogio-backend/system-model/Requirements/ConversationProtocol.md#riconoscimento-dellesito-riuscito-del-turno-da-parte-del-client)
   * satisfiedBy: [conversation-session.ts](../../src/features/session/model/conversation-session.ts)
-  * specify: [Conversazione testuale nel browser](../Capabilities/WebConversation.md#conversazione-testuale-nel-browser)
----
-
-### Segnalazione locale dell'interruzione della chat
-
-Quando la sessione conversazionale si chiude prima dell'esito di un turno, oppure il backend comunica `turn.interrupted`, il client web deve mostrare lo stato locale «Risposta interrotta» senza trasformare l'interruzione in uno scambio di errore conservato.
-
-#### Metadata
-  * type: requirement
-
-#### Contract References
-  * [Sessione ambrogio.v1 del client web](../Contracts/WebConversation.md#sessione-ambrogiov1-del-client-web)
-
-#### Relations
-  * derivedFrom: [Riconoscimento del completamento della risposta testuale](#riconoscimento-del-completamento-della-risposta-testuale)
-  * satisfiedBy: [ChatPanel.tsx](../../src/features/chat/ui/ChatPanel.tsx)
-  * specify: [Conversazione testuale nel browser](../Capabilities/WebConversation.md#conversazione-testuale-nel-browser)
+  * specify: [Conversazione familiare](../../../ambrogio-model/system-model/Capabilities/Product.md#conversazione-familiare)
 ---
 
 ### Rifiuto locale del turno non trasmissibile
 
-Se il testo da inviare è vuoto, composto di soli spazi o supera 64 KiB in UTF-8, il client web deve rifiutarlo con un messaggio senza aprire la sessione né trasmetterlo al backend.
+Quando la persona invia dalla chat web un testo che supera 64 KiB in UTF-8, oppure un testo vuoto o composto di soli spazi, la chat web deve rifiutarlo con il messaggio corrispondente dell'interfaccia, senza aprire la sessione conversazionale.
 
 #### Metadata
   * type: requirement
@@ -501,39 +425,63 @@ Se il testo da inviare è vuoto, composto di soli spazi o supera 64 KiB in UTF-8
   * [Sessione ambrogio.v1 del client web](../Contracts/WebConversation.md#sessione-ambrogiov1-del-client-web)
 
 #### Relations
+  * derivedFrom: [Rifiuto locale del turno testuale non trasmissibile](../../../ambrogio-model/system-model/Requirements/TextConversation.md#rifiuto-locale-del-turno-testuale-non-trasmissibile)
   * satisfiedBy: [Composer.tsx](../../src/features/chat/ui/Composer.tsx)
   * satisfiedBy: [conversation-session.ts](../../src/features/session/model/conversation-session.ts)
-  * specify: [Conversazione testuale nel browser](../Capabilities/WebConversation.md#conversazione-testuale-nel-browser)
+  * specify: [Conversazione familiare](../../../ambrogio-model/system-model/Capabilities/Product.md#conversazione-familiare)
 ---
 
-### Ripartenza dell'elenco conversazioni dopo un aggiornamento
+### Ripartenza dell'elenco conversazioni della chat web
 
-Quando il client web aggiorna l'elenco delle conversazioni conservate, deve scartare il riferimento alla pagina successiva della consultazione precedente e richiedere la prima pagina dell'elenco corrente.
+Quando la persona sceglie «Aggiorna» nella chat web, la chat web deve richiedere la prima pagina dell'elenco delle conversazioni e ricaricare lo storico della chat corrente.
 
 #### Metadata
   * type: requirement
 
 #### Contract References
+  * [Risposta HTTP dell'elenco conversazioni](../../../ambrogio-backend/system-model/Contracts/FamilyConversation.md#risposta-http-dellelenco-conversazioni)
   * [Schermata web della chat](../Contracts/WebConversation.md#schermata-web-della-chat)
 
 #### Relations
+  * derivedFrom: [Ripartenza dell'elenco conversazioni dei client testuali dopo un aggiornamento](../../../ambrogio-model/system-model/Requirements/TextConversation.md#ripartenza-dellelenco-conversazioni-dei-client-testuali-dopo-un-aggiornamento)
   * satisfiedBy: [conversation-list.ts](../../src/features/conversations/model/conversation-list.ts)
-  * specify: [Conversazione testuale nel browser](../Capabilities/WebConversation.md#conversazione-testuale-nel-browser)
+  * specify: [Conversazione familiare](../../../ambrogio-model/system-model/Capabilities/Product.md#conversazione-familiare)
 ---
 
-### Scansione dei segreti nella CI
+### Scansione dei segreti nella CI della chat web
 
-Quando viene eseguito un push su qualunque branch o viene proposta una pull request, la CI del repository deve scansionare con gitleaks l'intera storia Git del client web e deve fallire se rileva un segreto, senza riportarne il valore nell'output.
+La CI della chat web deve scansionare l'intera storia Git del repository nel job `Gitleaks` di `.github/workflows/secret-scan.yml`, secondo il profilo di scansione dei segreti della chat web.
 
 #### Metadata
   * type: requirement
 
 #### Contract References
+  * [Profilo di scansione dei segreti con gitleaks](../../../ambrogio-model/system-model/Contracts/ModelDrivenDevelopment.md#profilo-di-scansione-dei-segreti-con-gitleaks)
   * [Profilo di sicurezza dei workflow GitHub Actions](../Contracts/WebConversation.md#profilo-di-sicurezza-dei-workflow-github-actions)
 
 #### Relations
+  * derivedFrom: [Scansione dei segreti nella CI](../../../ambrogio-model/system-model/Requirements/ModelDrivenDevelopment.md#scansione-dei-segreti-nella-ci)
   * satisfiedBy: [secret-scan.yml](../../.github/workflows/secret-scan.yml)
-  * specify: [Conversazione testuale nel browser](../Capabilities/WebConversation.md#conversazione-testuale-nel-browser)
+  * specify: [Sviluppo governato dal modello](../../../ambrogio-model/system-model/Capabilities/Engineering.md#sviluppo-governato-dal-modello)
+---
+
+### Segnalazione locale dell'interruzione della chat
+
+Quando la sessione conversazionale si chiude prima dell'esito di un turno, oppure il backend comunica `turn.interrupted`, la chat web deve mostrare per quel turno il testo «Risposta interrotta» del dizionario dell'interfaccia.
+
+#### Metadata
+  * type: requirement
+
+#### Contract References
+  * [Esiti del turno nel protocollo Ambrogio v1](../../../ambrogio-backend/system-model/Contracts/ConversationProtocol.md#esiti-del-turno-nel-protocollo-ambrogio-v1)
+  * [Sessione del protocollo Ambrogio v1](../../../ambrogio-backend/system-model/Contracts/ConversationProtocol.md#sessione-del-protocollo-ambrogio-v1)
+  * [Lingue dell'interfaccia del client web](../Contracts/WebConversation.md#lingue-dellinterfaccia-del-client-web)
+  * [Sessione ambrogio.v1 del client web](../Contracts/WebConversation.md#sessione-ambrogiov1-del-client-web)
+
+#### Relations
+  * derivedFrom: [Segnalazione locale dell'interruzione nei client testuali](../../../ambrogio-model/system-model/Requirements/TextConversation.md#segnalazione-locale-dellinterruzione-nei-client-testuali)
+  * satisfiedBy: [ChatPanel.tsx](../../src/features/chat/ui/ChatPanel.tsx)
+  * specify: [Conversazione familiare](../../../ambrogio-model/system-model/Capabilities/Product.md#conversazione-familiare)
 ---
 
 ### Separazione del nucleo dall'interfaccia
@@ -566,33 +514,45 @@ Il client web deve essere un'applicazione a pagina singola in TypeScript e React
   * specify: [Conversazione testuale nel browser](../Capabilities/WebConversation.md#conversazione-testuale-nel-browser)
 ---
 
-### Stato del turno in elaborazione alla riapertura
+### Stato del turno in elaborazione alla riapertura nella chat web
 
-Quando la famiglia consulta dal client web una conversazione con un turno testuale accettato il cui esito non è ancora conservato, il client deve mostrare quel turno come «In elaborazione» e invitare ad aggiornare più tardi; a una nuova consultazione dopo la conservazione dell'esito deve mostrare lo scambio concluso.
-
-#### Metadata
-  * type: requirement
-
-#### Relations
-  * satisfiedBy: [ChatPanel.tsx](../../src/features/chat/ui/ChatPanel.tsx)
-  * specify: [Conversazione testuale nel browser](../Capabilities/WebConversation.md#conversazione-testuale-nel-browser)
----
-
-### Verifiche manuali giustificate
-
-Ogni verifica di ispezione, analisi o dimostrazione deve indicare il motivo per cui non è automatizzabile, in una frase che inizia con «Non automatizzabile:».
-
-#### Details
-Una verifica automatizzabile è una verifica di test. Reqvire registra che una verifica esiste, non che sia stata eseguita: una verifica manuale non ripetuta dopo una modifica lascia passare una violazione del requisito.
+Quando la chat web mostra un turno in elaborazione alla consultazione di una conversazione, deve presentarlo con il testo «In elaborazione» del dizionario dell'interfaccia, che invita ad aggiornare più tardi, e deve mostrare un turno interrotto con il testo «Risposta interrotta».
 
 #### Metadata
   * type: requirement
 
 #### Contract References
-  * [Script di integrità del modello](../Contracts/WebConversation.md#script-di-integrità-del-modello)
+  * [Risposta HTTP dello storico conversazionale](../../../ambrogio-backend/system-model/Contracts/FamilyConversation.md#risposta-http-dello-storico-conversazionale)
+  * [Stati persistenti dei turni conversazionali](../../../ambrogio-backend/system-model/Contracts/FamilyConversation.md#stati-persistenti-dei-turni-conversazionali)
+  * [Stati del turno testuale alla riapertura](../../../ambrogio-model/system-model/Contracts/TextConversation.md#stati-del-turno-testuale-alla-riapertura)
+  * [Lingue dell'interfaccia del client web](../Contracts/WebConversation.md#lingue-dellinterfaccia-del-client-web)
+  * [Schermata web della chat](../Contracts/WebConversation.md#schermata-web-della-chat)
 
 #### Relations
-  * specify: [Conversazione testuale nel browser](../Capabilities/WebConversation.md#conversazione-testuale-nel-browser)
+  * derivedFrom: [Stato del turno in elaborazione alla riapertura nei client testuali](../../../ambrogio-model/system-model/Requirements/TextConversation.md#stato-del-turno-in-elaborazione-alla-riapertura-nei-client-testuali)
+  * satisfiedBy: [ChatPanel.tsx](../../src/features/chat/ui/ChatPanel.tsx)
+  * specify: [Conversazione familiare](../../../ambrogio-model/system-model/Capabilities/Product.md#conversazione-familiare)
+---
+
+### Uso delle sole interfacce pubbliche del backend nella chat web
+
+Quando la chat web comunica con il backend, deve usare soltanto il protocollo `ambrogio.v1` e le API HTTP pubbliche definite dai contratti del backend, e il suo codice di produzione non deve importare codice del backend.
+
+#### Metadata
+  * type: requirement
+
+#### Contract References
+  * [Schema JSON del protocollo Ambrogio v1](../../../ambrogio-backend/system-model/Contracts/ConversationProtocol.md#schema-json-del-protocollo-ambrogio-v1)
+  * [Sessione del protocollo Ambrogio v1](../../../ambrogio-backend/system-model/Contracts/ConversationProtocol.md#sessione-del-protocollo-ambrogio-v1)
+  * [Risposta HTTP dell'elenco conversazioni](../../../ambrogio-backend/system-model/Contracts/FamilyConversation.md#risposta-http-dellelenco-conversazioni)
+  * [Risposta HTTP dello storico conversazionale](../../../ambrogio-backend/system-model/Contracts/FamilyConversation.md#risposta-http-dello-storico-conversazionale)
+  * [Ingresso di prova del server conversazionale](../../../ambrogio-backend/system-model/Contracts/ServerFoundation.md#ingresso-di-prova-del-server-conversazionale)
+
+#### Relations
+  * derivedFrom: [Uso delle sole interfacce pubbliche del backend](../../../ambrogio-model/system-model/Requirements/CodeArchitecture.md#uso-delle-sole-interfacce-pubbliche-del-backend)
+  * satisfiedBy: [conversations-api.ts](../../src/features/conversations/model/conversations-api.ts)
+  * satisfiedBy: [conversation-session.ts](../../src/features/session/model/conversation-session.ts)
+  * specify: [Architettura del codice](../../../ambrogio-model/system-model/Capabilities/Engineering.md#architettura-del-codice)
 ---
 
 ### Vista a due aree della conversazione

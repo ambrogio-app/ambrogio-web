@@ -2,13 +2,14 @@ import { existsSync } from 'node:fs';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { fakeGitHubToken, GitSandbox, requireGitleaks } from '../support/git-sandbox';
 import {
-  block, capture, contractText, job, readWorkflow, runOf, scalar, stepNamed, steps,
+  block, capture, commonContractText, contractText, job, readWorkflow, runOf, scalar, stepNamed, steps,
 } from '../support/repository-files';
 
 const workflow = readWorkflow('secret-scan.yml');
 const gitleaks = job(workflow, 'gitleaks');
 const gitleaksSteps = steps(gitleaks);
-const profile = contractText('Profilo di scansione dei segreti con gitleaks');
+const profile = commonContractText('Profilo di scansione dei segreti con gitleaks');
+const webProfile = contractText('Profilo di scansione dei segreti della chat web');
 
 describe('secret scan workflow', () => {
   it('runs on pushes to every branch, pull requests, manual runs and calls from other workflows', () => {
@@ -24,10 +25,12 @@ describe('secret scan workflow', () => {
     expect(checkout).toMatch(/uses: actions\/checkout@[0-9a-f]{40} /);
     expect(scalar(block(checkout, 'with', 8), 'fetch-depth', 10)).toBe('0');
     expect(scalar(block(checkout, 'with', 8), 'persist-credentials', 10)).toBe('false');
+    expect(profile).toContain('`fetch-depth: 0`');
+    expect(webProfile).toContain('con il job `Gitleaks`');
   });
 
   it('installs the gitleaks release of the profile and checks its SHA-256 before extracting it', () => {
-    const version = capture(profile, /gitleaks v(\d+\.\d+\.\d+)/);
+    const version = capture(profile, /usa gitleaks (\d+\.\d+\.\d+)/);
     const archive = capture(profile, /archivio `(gitleaks_[^`]+\.tar\.gz)`/);
     const sha256 = capture(profile, /SHA-256 `([0-9a-f]{64})`/);
     const env = block(gitleaks, 'env', 4);

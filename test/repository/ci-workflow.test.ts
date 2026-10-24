@@ -35,32 +35,63 @@ describe('CI workflow', () => {
   it('installs gitleaks exactly as the secret scan workflow does, before the tests', () => {
     const scan = readWorkflow('secret-scan.yml');
     const scanJob = job(scan, 'gitleaks');
-    expect(block(checks, 'env', 4)).toBe(block(scanJob, 'env', 4));
+    for (const name of ['GITLEAKS_VERSION', 'GITLEAKS_SHA256']) {
+      expect(scalar(block(checks, 'env', 4), name, 6), name).toBe(scalar(block(scanJob, 'env', 4), name, 6));
+    }
     const install = stepNamed(checkSteps, 'Install gitleaks');
     expect(runOf(install)).toBe(runOf(stepNamed(steps(scanJob), 'Install gitleaks')));
     expect(scalar(install, 'shell', 8)).toBe('bash');
     expect(checkSteps.indexOf(install)).toBeLessThan(position('pnpm test'));
   });
 
-  it('runs the model, type, test and build checks in the contract order', () => {
+  it('checks out the web client, ambrogio-model and the other repositories side by side in workspace/', () => {
+    const checkout = stepNamed(checkSteps, 'Check out repository');
+    expect(checkout).toMatch(/uses: actions\/checkout@/);
+    expect(scalar(block(checkout, 'with', 8), 'path', 10)).toBe('workspace/ambrogio-web');
+    expect(scalar(block(checkout, 'with', 8), 'fetch-depth', 10)).toBe('0');
+    expect(scalar(block(checks, 'env', 4), 'BRANCH', 6)).toBe('${{ github.head_ref || github.ref_name }}');
+    const model = runOf(stepNamed(checkSteps, 'Check out ambrogio-model'));
+    expect(model).toContain('url="https://github.com/ambrogio-app/ambrogio-model.git"');
+    expect(model).toContain('if git ls-remote --exit-code --heads "$url" "$BRANCH" >/dev/null; then ref="$BRANCH"; fi');
+    expect(model).toContain('git clone --quiet --branch "$ref" "$url" workspace/ambrogio-model');
+    expect(position('ambrogio-model.git'))
+      .toBeLessThan(position('workspace/ambrogio-model/scripts/checkout-workspace workspace "$BRANCH"'));
+  });
+
+  it('runs the model, type, test, build and integration checks in the contract order', () => {
     const order = [
-      'npx --yes @reqvire-org/reqvire@1.3.2 --workspace "$PWD" validate',
-      'npx --yes @reqvire-org/reqvire@1.3.2 --workspace "$PWD" lint --json > "$report"',
-      'node scripts/check-model.mjs',
+      'workspace/ambrogio-model/scripts/checkout-workspace workspace "$BRANCH"',
+      'workspace/ambrogio-model/scripts/model-checks --workspace workspace',
+      'npx --yes "pnpm@${pnpm_version}" build',
       'pnpm typecheck',
       'pnpm test',
       'pnpm build',
+      'pnpm test:backend',
     ].map(position);
     expect(order).toEqual([...order].sort((a, b) => a - b));
     expect(new Set(order).size).toBe(order.length);
-    expect(position('pnpm install --frozen-lockfile')).toBeLessThan(order[0] ?? -1);
-    expect(commands.slice(-1)).toEqual(['pnpm build']);
+    expect(position('pnpm install --frozen-lockfile')).toBeLessThan(position('pnpm typecheck'));
+    expect(commands.slice(-2)).toEqual(['pnpm build', 'pnpm test:backend']);
   });
 
-  it('fails the lint step when automatic fixes or items to review remain', () => {
-    const lint = commands[position('lint --json')] ?? '';
-    expect(lint).toContain("jq -e '.auto_fixable == [] and .needs_manual_review == []' \"$report\"");
-    expect(lint.indexOf('cat "$report"')).toBeLessThan(lint.indexOf('jq -e'));
+  it('leaves the Reqvire version and the model integrity checks to ambrogio-model', () => {
+    expect(workflow.text).not.toMatch(/reqvire@\d|check-model/);
+  });
+
+  it('installs and builds the side-by-side backend with the pnpm version it declares', () => {
+    const backend = stepNamed(checkSteps, 'Install and build the side-by-side backend');
+    expect(scalar(backend, 'working-directory', 8)).toBe('workspace/ambrogio-backend');
+    expect(runOf(backend).split('\n').slice(-3)).toEqual([
+      'pnpm_version=$(node -p "require(\'./package.json\').packageManager.replace(/^pnpm@/, \'\')")',
+      'npx --yes "pnpm@${pnpm_version}" install --frozen-lockfile',
+      'npx --yes "pnpm@${pnpm_version}" build',
+    ]);
+  });
+
+  it('runs the web client commands in its checkout', () => {
+    for (const command of ['pnpm install --frozen-lockfile', 'pnpm typecheck', 'pnpm test', 'pnpm build', 'pnpm test:backend']) {
+      expect(scalar(checkSteps[position(command)] ?? '', 'working-directory', 8), command).toBe('workspace/ambrogio-web');
+    }
   });
 
   it('lets every failed check fail the job', () => {

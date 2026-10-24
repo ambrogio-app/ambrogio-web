@@ -20,38 +20,8 @@ L'analisi passa se lo stato di ogni funzionalità è un reducer puro nella sua p
 
 #### Relations
   * derivedFrom: [Verifica del client web](#verifica-del-client-web)
-  * verify: [Esiti previsti come valori tipizzati](../Requirements/WebConversation.md#esiti-previsti-come-valori-tipizzati)
+  * verify: [Esiti previsti come valori tipizzati nella chat web](../Requirements/WebConversation.md#esiti-previsti-come-valori-tipizzati-nella-chat-web)
   * verify: [Separazione del nucleo dall'interfaccia](../Requirements/WebConversation.md#separazione-del-nucleo-dallinterfaccia)
----
-
-### Analisi della compatibilità con il backend
-
-Esaminare la revisione di backend dichiarata nel contratto sorgente e confrontare i messaggi `ambrogio.v1` inviati e interpretati dal client, gli esiti e i rifiuti, l'elenco e lo storico con i contratti pubblici e lo schema del protocollo a quella revisione, e con l'esito della prova di integrazione.
-
-#### Details
-L'analisi passa se la revisione è identificata in modo riproducibile e tutti gli usi del protocollo e delle rotte HTTP corrispondono ai contratti, allo schema e alle prove eseguite. Fallisce se la revisione è indefinita o se il client dipende da file o moduli interni del backend. Non automatizzabile: il confronto con i testi dei contratti del backend richiede di leggerli, e la prova di integrazione ne esercita soltanto una parte.
-
-#### Metadata
-  * type: analysis-verification
-
-#### Relations
-  * derivedFrom: [Verifica del client web](#verifica-del-client-web)
-  * verify: [Compatibilità con l'API conversazionale del backend](../Requirements/WebConversation.md#compatibilità-con-lapi-conversazionale-del-backend)
----
-
-### Controllo del repository del client web
-
-Esaminare il repository Git del client web, la configurazione del workspace Reqvire e le decisioni tecniche presenti nel codice.
-
-#### Details
-Il controllo passa se repository e modello sono autonomi dal backend, il workspace Reqvire canonico è la radice del repository e ogni decisione tecnica del client presente nel codice è registrata nel modello. Fallisce se il client dipende da file del repository del backend o se una decisione del client è registrata solo nel codice. Non automatizzabile: stabilire che una decisione presente nel codice sia registrata nel modello richiede di leggere entrambi.
-
-#### Metadata
-  * type: inspection-verification
-
-#### Relations
-  * derivedFrom: [Verifica del client web](#verifica-del-client-web)
-  * verify: [Repository autonomo del client web](../Requirements/WebConversation.md#repository-autonomo-del-client-web)
 ---
 
 ### Controllo della pubblicazione dell'immagine
@@ -82,15 +52,15 @@ Il controllo passa se entrambe le esecuzioni terminano con successo sul commit, 
 #### Relations
   * derivedFrom: [Verifica del client web](#verifica-del-client-web)
   * verify: [Controlli CI del client web](../Requirements/WebConversation.md#controlli-ci-del-client-web)
-  * verify: [Scansione dei segreti nella CI](../Requirements/WebConversation.md#scansione-dei-segreti-nella-ci)
+  * verify: [Scansione dei segreti nella CI della chat web](../Requirements/WebConversation.md#scansione-dei-segreti-nella-ci-della-chat-web)
 ---
 
 ### Dimostrazione nel browser
 
-Costruire l'immagine, montare un `config.json` con l'indirizzo di un backend alla revisione dichiarata, aggiungere l'origine del client all'elenco del backend e usare la chat da un browser desktop e da uno con schermo stretto: nuovo turno, continuazione, conversazione iniziata da un altro client, risposta con Markdown, cambio di chat durante un turno, ricaricamento con la chat nell'indirizzo, uso da tastiera.
+Costruire l'immagine, montare un `config.json` con l'indirizzo di un backend avviato dal checkout affiancato nella cartella di lavoro, aggiungere l'origine del client all'elenco del backend e usare la chat da un browser desktop e da uno con schermo stretto: nuovo turno, continuazione, conversazione iniziata da un altro client, risposta con Markdown, cambio di chat durante un turno, ricaricamento con la chat nell'indirizzo, uso da tastiera.
 
 #### Details
-La dimostrazione passa se la persona conversa e consulta le conversazioni dal browser come previsto dalla schermata e la console del browser non riporta violazioni della Content-Security-Policy. Non automatizzabile: l'uso da tastiera, lo scorrimento delle due aree e l'assenza di violazioni della Content-Security-Policy si osservano soltanto in un browser reale con il layout applicato, che jsdom non riproduce.
+La dimostrazione registra nell'evidenza il commit del backend usato. Passa se la persona conversa e consulta le conversazioni dal browser come previsto dalla schermata e la console del browser non riporta violazioni della Content-Security-Policy. Non automatizzabile: l'uso da tastiera, lo scorrimento delle due aree e l'assenza di violazioni della Content-Security-Policy si osservano soltanto in un browser reale con il layout applicato, che jsdom non riproduce.
 
 #### Metadata
   * type: demonstration-verification
@@ -100,7 +70,7 @@ La dimostrazione passa se la persona conversa e consulta le conversazioni dal br
   * verify: [Client conversazionale nel browser](../Requirements/WebConversation.md#client-conversazionale-nel-browser)
 ---
 
-### Ispezione della protezione del merge
+### Ispezione della protezione del merge della chat web
 
 Leggere con `gh api repos/<proprietario>/<repository>/rulesets` e con il dettaglio del ruleset `main` le regole attive sul branch principale.
 
@@ -112,7 +82,7 @@ L'ispezione passa se il ruleset corrisponde al contratto: applicazione attiva su
 
 #### Relations
   * derivedFrom: [Verifica del client web](#verifica-del-client-web)
-  * verify: [Controlli obbligatori prima del merge](../Requirements/WebConversation.md#controlli-obbligatori-prima-del-merge)
+  * verify: [Controlli obbligatori prima del merge della chat web](../Requirements/WebConversation.md#controlli-obbligatori-prima-del-merge-della-chat-web)
 ---
 
 ### Ispezione della sicurezza dei workflow GitHub Actions
@@ -130,42 +100,27 @@ L'ispezione passa se ogni SHA fissato appartiene alla release indicata nel comme
   * verify: [Privilegi minimi dei workflow GitHub Actions](../Requirements/WebConversation.md#privilegi-minimi-dei-workflow-github-actions)
 ---
 
-### Ispezione delle decisioni sostituite
+### Ispezione delle istruzioni per gli agenti della chat web
 
-Durante la revisione di ogni modifica che registra una decisione in sostituzione di un'altra, cercare nel modello gli elementi che affermano la decisione sostituita, con `change-impact` e con una ricerca testuale dei suoi termini chiave.
+Durante la revisione di ogni modifica di `AGENTS.md` della chat web o di `AGENTS.md` di `ambrogio-model`, leggere i due file e confrontarli con i requisiti della capability «Sviluppo governato dal modello».
 
 #### Details
-L'ispezione passa se, dopo la modifica, nessun requisito, contratto o verifica afferma ancora la decisione sostituita. Fallisce se un elemento la afferma ancora. Non automatizzabile: riconoscere che un testo afferma una decisione sostituita richiede di leggerlo; lo script copre soltanto date e formule di storia.
+L'ispezione passa se le istruzioni della chat web rimandano a `ambrogio-model/AGENTS.md` per le regole comuni, non contraddicono i requisiti di processo e aggiungono soltanto indicazioni proprie del repository. Fallisce se le istruzioni contraddicono un requisito, ripetono una regola comune in forma divergente o descrivono un modello autonomo o una revisione fissata del backend. Non automatizzabile: stabilire che istruzioni in prosa contraddicono o ripetono un requisito richiede di leggerle.
 
 #### Metadata
   * type: inspection-verification
 
 #### Relations
   * derivedFrom: [Verifica del client web](#verifica-del-client-web)
-  * verify: [Decisioni sostituite rimosse nella stessa modifica](../Requirements/WebConversation.md#decisioni-sostituite-rimosse-nella-stessa-modifica)
----
-
-### Ispezione delle dipendenze fra contratti
-
-Durante la revisione di ogni modifica che aggiunge o modifica un contratto, leggere il contratto e i contratti dei requisiti da cui dipende, ed eseguire `change-impact` sulla modifica.
-
-#### Details
-L'ispezione passa se il contratto afferma soltanto la decisione del proprio requisito e ogni dipendenza da un contratto posseduto da un altro requisito è dichiarata come Contract Reference dal requisito proprietario del contratto dipendente, così che `change-impact` la segnali. Fallisce se un contratto ripete contenuto posseduto da un altro requisito o se una dipendenza non è dichiarata. Non automatizzabile: stabilire se due testi affermano lo stesso fatto richiede di leggerli.
-
-#### Metadata
-  * type: inspection-verification
-
-#### Relations
-  * derivedFrom: [Verifica del client web](#verifica-del-client-web)
-  * verify: [Dipendenze fra contratti dichiarate come riferimenti](../Requirements/WebConversation.md#dipendenze-fra-contratti-dichiarate-come-riferimenti)
+  * verify: [Istruzioni per gli agenti della chat web](../Requirements/WebConversation.md#istruzioni-per-gli-agenti-della-chat-web)
 ---
 
 ### Prova del profilo di sicurezza dei workflow
 
-Leggere come testo `.github/workflows/ci.yml`, `.github/workflows/secret-scan.yml` e `.github/workflows/publish-image.yml` e confrontarli con il profilo di sicurezza dei workflow GitHub Actions letto dal modello.
+Leggere come testo `.github/workflows/ci.yml`, `.github/workflows/secret-scan.yml` e `.github/workflows/publish-image.yml` e confrontarli con il profilo comune dei workflow GitHub Actions e con il profilo di sicurezza dei workflow GitHub Actions della chat web letti dal modello.
 
 #### Details
-La prova passa se ogni workflow dichiara al primo livello soltanto `permissions: contents: read`; soltanto il job `publish` dichiara permessi propri, `contents: read` e `packages: write`, e nessun altro permesso di scrittura compare; ogni azione esterna è indicata con lo SHA completo e il commento di versione elencati nel profilo; `actions/setup-node` ha `package-manager-cache: false`; ogni job eseguito su un runner usa `ubuntu-24.04` e ha `timeout-minutes` uguale a 15 per `checks`, 10 per `gitleaks` e 45 per `publish`; ogni `actions/checkout` ha `persist-credentials: false`; `GITHUB_TOKEN` arriva a `docker login` soltanto tramite variabile d'ambiente e `--password-stdin` e nessuno script interpola segreti; `docker logout ghcr.io` ha `if: always()`; `ci.yml` e `secret-scan.yml` dichiarano `workflow_call` e `publish-image.yml` li richiama nei job `checks` e `secret-scan`; `concurrency` ha gruppo `web-release-${{ github.ref }}` e `cancel-in-progress: false`. Fallisce se un job riceve un permesso non previsto dal profilo, se un'azione è indicata con un tag, un branch o uno SHA diverso dal profilo, se un job non ha limite di durata o se un checkout conserva le credenziali.
+La prova passa se ogni workflow dichiara al primo livello soltanto `permissions: contents: read`; soltanto il job `publish` dichiara permessi propri, `contents: read` e `packages: write`, e nessun altro permesso di scrittura compare; ogni azione esterna è indicata con lo SHA completo e il commento di versione elencati nei due profili; `actions/setup-node` ha `package-manager-cache: false`; ogni job eseguito su un runner usa `ubuntu-24.04` e ha `timeout-minutes` uguale a 15 per `checks`, 10 per `gitleaks` e 45 per `publish`; ogni `actions/checkout` ha `persist-credentials: false`; `GITHUB_TOKEN` arriva a `docker login` soltanto tramite variabile d'ambiente e `--password-stdin` e nessuno script interpola segreti; `docker logout ghcr.io` ha `if: always()`; `ci.yml` e `secret-scan.yml` dichiarano `workflow_call` e `publish-image.yml` li richiama nei job `checks` e `secret-scan`; `concurrency` ha gruppo `web-release-${{ github.ref }}` e `cancel-in-progress: false`. Fallisce se un job riceve un permesso non previsto dal profilo, se un'azione è indicata con un tag, un branch o uno SHA diverso dai profili, se un job non ha limite di durata o se un checkout conserva le credenziali.
 
 #### Metadata
   * type: test-verification
@@ -190,10 +145,10 @@ La prova passa se i messaggi inviati seguono il contratto della sessione, la ses
   * derivedFrom: [Verifica del client web](#verifica-del-client-web)
   * satisfiedBy: [conversation-session.test.ts](../../test/features/session/model/conversation-session.test.ts)
   * satisfiedBy: [fake-backend.ts](../../test/support/fake-backend.ts)
-  * verify: [Invio del turno sul canale conversazionale](../Requirements/WebConversation.md#invio-del-turno-sul-canale-conversazionale)
-  * verify: [Presentazione del rifiuto del turno](../Requirements/WebConversation.md#presentazione-del-rifiuto-del-turno)
-  * verify: [Presentazione dell'errore dopo l'ammissione](../Requirements/WebConversation.md#presentazione-dellerrore-dopo-lammissione)
-  * verify: [Riconoscimento del completamento della risposta testuale](../Requirements/WebConversation.md#riconoscimento-del-completamento-della-risposta-testuale)
+  * verify: [Invio del turno dalla chat web](../Requirements/WebConversation.md#invio-del-turno-dalla-chat-web)
+  * verify: [Presentazione del rifiuto del turno nella chat web](../Requirements/WebConversation.md#presentazione-del-rifiuto-del-turno-nella-chat-web)
+  * verify: [Presentazione dell'errore dopo l'ammissione nella chat web](../Requirements/WebConversation.md#presentazione-dellerrore-dopo-lammissione-nella-chat-web)
+  * verify: [Riconoscimento del completamento della risposta nella chat web](../Requirements/WebConversation.md#riconoscimento-del-completamento-della-risposta-nella-chat-web)
   * verify: [Rifiuto locale del turno non trasmissibile](../Requirements/WebConversation.md#rifiuto-locale-del-turno-non-trasmissibile)
   * verify: [Segnalazione locale dell'interruzione della chat](../Requirements/WebConversation.md#segnalazione-locale-dellinterruzione-della-chat)
 ---
@@ -203,7 +158,7 @@ La prova passa se i messaggi inviati seguono il contratto della sessione, la ses
 Leggere come testo `.github/workflows/ci.yml` ed esaminarne attivazioni, job e passi.
 
 #### Details
-La prova passa se il workflow si attiva su push del branch principale, pull request, richiesta manuale e chiamata da altri workflow; il job `checks`, chiamato `Web client checks`, imposta Node.js 24, installa pnpm con `npm install --global pnpm@12.11.2`, installa gitleaks con le stesse variabili e gli stessi comandi, verifica SHA-256 compresa, di `.github/workflows/secret-scan.yml`, installa le dipendenze con `pnpm install --frozen-lockfile` e poi esegue in quest'ordine Reqvire 1.3.2 `validate`, `lint --json` controllato con `jq -e '.auto_fixable == [] and .needs_manual_review == []'`, `node scripts/check-model.mjs`, `pnpm typecheck`, `pnpm test` e `pnpm build`; nessun passo ha `continue-on-error`, condizioni `if` o `|| true`, e ogni script su più righe inizia con `set -euo pipefail`. Fallisce se manca una fase, se l'ordine differisce o se un controllo fallito non fa fallire il job.
+La prova passa se il workflow si attiva su push del branch principale, pull request, richiesta manuale e chiamata da altri workflow; il job `checks`, chiamato `Web client checks`, dichiara `BRANCH` uguale a `${{ github.head_ref || github.ref_name }}`, esegue il checkout del repository in `workspace/ambrogio-web` con `fetch-depth: 0`, imposta Node.js 24, clona `ambrogio-model` in `workspace/ambrogio-model` sul branch `BRANCH` se esiste sul remoto e altrimenti su `main`, esegue `workspace/ambrogio-model/scripts/checkout-workspace workspace "$BRANCH"` e poi `workspace/ambrogio-model/scripts/model-checks --workspace workspace`; nella cartella `workspace/ambrogio-backend` installa le dipendenze del backend con `pnpm install --frozen-lockfile` e lo compila con `pnpm build`, usando tramite `npx` la versione di pnpm dichiarata in `packageManager` del `package.json` del backend; nella cartella `workspace/ambrogio-web` installa pnpm con `npm install --global pnpm@12.11.2`, installa gitleaks con le stesse variabili e gli stessi comandi, verifica SHA-256 compresa, di `.github/workflows/secret-scan.yml`, installa le dipendenze con `pnpm install --frozen-lockfile` e poi esegue in quest'ordine `pnpm typecheck`, `pnpm test`, `pnpm build` e `pnpm test:backend`; nessun passo ha `continue-on-error`, condizioni `if` o `|| true`, nessun passo ripete il numero di versione di Reqvire, e ogni script su più righe inizia con `set -euo pipefail`. Fallisce se manca una fase, se l'ordine differisce o se un controllo fallito non fa fallire il job.
 
 #### Metadata
   * type: test-verification
@@ -235,7 +190,7 @@ La prova passa se il workflow si attiva soltanto al push di tag `v*` e la sua es
 Leggere come testo `.github/workflows/secret-scan.yml` ed esaminarne attivazioni, checkout, installazione di gitleaks e scansione; eseguire il comando di scansione del workflow in un repository Git temporaneo, con una storia che contiene un token fittizio costruito durante la prova e con una storia priva di segreti.
 
 #### Details
-La prova passa se il workflow si attiva su push di qualunque branch, pull request, richiesta manuale e chiamata da altri workflow; il job `gitleaks`, chiamato `Gitleaks`, recupera l'intera storia con `fetch-depth: 0` e `persist-credentials: false`; versione, archivio e SHA-256 di gitleaks corrispondono al profilo di scansione dei segreti, l'archivio si scarica dalla release ufficiale, `sha256sum --check --strict` precede l'estrazione e lo script inizia con `set -euo pipefail`; la scansione esegue `gitleaks git --redact --no-banner --exit-code 1 .`; quel comando termina con stato 1 sulla storia con il token, senza riportarne il valore, e con stato 0 sulla storia pulita. Il repository temporaneo viene eliminato dopo la prova. Fallisce se una di queste condizioni manca, se gitleaks non è disponibile o se l'output riporta il valore del token.
+La prova passa se il workflow si attiva su push di qualunque branch, pull request, richiesta manuale e chiamata da altri workflow; il job `gitleaks`, chiamato `Gitleaks`, recupera l'intera storia con `fetch-depth: 0` e `persist-credentials: false`; versione, archivio e SHA-256 di gitleaks corrispondono al profilo comune di scansione dei segreti con gitleaks, l'archivio si scarica dalla release ufficiale, `sha256sum --check --strict` precede l'estrazione e lo script inizia con `set -euo pipefail`; la scansione esegue `gitleaks git --redact --no-banner --exit-code 1 .`; quel comando termina con stato 1 sulla storia con il token, senza riportarne il valore, e con stato 0 sulla storia pulita. Il repository temporaneo viene eliminato dopo la prova. Fallisce se una di queste condizioni manca, se gitleaks non è disponibile o se l'output riporta il valore del token.
 
 #### Metadata
   * type: test-verification
@@ -243,7 +198,7 @@ La prova passa se il workflow si attiva su push di qualunque branch, pull reques
 #### Relations
   * derivedFrom: [Verifica del client web](#verifica-del-client-web)
   * satisfiedBy: [secret-scan-workflow.test.ts](../../test/repository/secret-scan-workflow.test.ts)
-  * verify: [Scansione dei segreti nella CI](../Requirements/WebConversation.md#scansione-dei-segreti-nella-ci)
+  * verify: [Scansione dei segreti nella CI della chat web](../Requirements/WebConversation.md#scansione-dei-segreti-nella-ci-della-chat-web)
 ---
 
 ### Prova dell'accessibilità di base
@@ -262,7 +217,23 @@ La prova passa se ogni comando e il campo di scrittura hanno un nome accessibile
   * verify: [Accessibilità di base dell'interfaccia](../Requirements/WebConversation.md#accessibilità-di-base-dellinterfaccia)
 ---
 
-### Prova dell'hook pre-commit dei segreti
+### Prova dell'assenza di import del backend nella chat web
+
+Leggere come testo ogni file TypeScript di produzione sotto `src/`, con l'estrazione degli specificatori di import ed export della prova delle regole di architettura, e risolvere gli specificatori relativi rispetto alla radice del repository.
+
+#### Details
+La prova passa se nessuno specificatore nomina un package dello scope `@ambrogio/`, che contiene i package del backend, né un percorso che contiene `ambrogio-backend` o che si risolve fuori dalla radice del repository, e se le stesse regole riconoscono come import del backend gli specificatori di esempio di ciascun tipo. Fallisce se un file di produzione importa codice del backend o se non vengono letti tutti i file TypeScript di `src/`.
+
+#### Metadata
+  * type: test-verification
+
+#### Relations
+  * derivedFrom: [Verifica del client web](#verifica-del-client-web)
+  * satisfiedBy: [backend-imports.test.ts](../../test/repository/backend-imports.test.ts)
+  * verify: [Uso delle sole interfacce pubbliche del backend nella chat web](../Requirements/WebConversation.md#uso-delle-sole-interfacce-pubbliche-del-backend-nella-chat-web)
+---
+
+### Prova dell'hook pre-commit dei segreti della chat web
 
 In un repository Git temporaneo con `.githooks/pre-commit` attivato tramite `core.hooksPath`, mettere in staging un file con un token fittizio costruito durante la prova e tentare il commit; ripetere con un file privo di segreti e con un `PATH` che contiene soltanto `git`, senza `gitleaks`.
 
@@ -275,7 +246,7 @@ La prova passa se il commit con il token fittizio viene rifiutato e l'output non
 #### Relations
   * derivedFrom: [Verifica del client web](#verifica-del-client-web)
   * satisfiedBy: [pre-commit-hook.test.ts](../../test/repository/pre-commit-hook.test.ts)
-  * verify: [Controllo dei segreti prima del commit](../Requirements/WebConversation.md#controllo-dei-segreti-prima-del-commit)
+  * verify: [Controllo dei segreti prima del commit della chat web](../Requirements/WebConversation.md#controllo-dei-segreti-prima-del-commit-della-chat-web)
 ---
 
 ### Prova dell'identità del browser nella sessione
@@ -345,26 +316,6 @@ La prova passa se l'installazione termina senza errori, `pnpm-lock.yaml` resta i
   * verify: [Installazione riproducibile delle dipendenze](../Requirements/WebConversation.md#installazione-riproducibile-delle-dipendenze)
 ---
 
-### Prova dell'integrità del modello
-
-Eseguire `node scripts/check-model.mjs` nella radice del repository, come fa la CI dopo la validazione e il lint del modello.
-
-#### Details
-La prova passa se lo script non segnala storia delle decisioni, formule non normative, verifiche manuali senza «Non automatizzabile:» né file di governo non riferiti dal modello, e termina con stato 0. Fallisce se lo script segnala una violazione o non riesce a eseguire.
-
-#### Metadata
-  * type: test-verification
-
-#### Relations
-  * derivedFrom: [Verifica del client web](#verifica-del-client-web)
-  * satisfiedBy: [check-model.mjs](../../scripts/check-model.mjs)
-  * verify: [Controllo automatico dell'integrità del modello](../Requirements/WebConversation.md#controllo-automatico-dellintegrità-del-modello)
-  * verify: [Decisioni sostituite rimosse nella stessa modifica](../Requirements/WebConversation.md#decisioni-sostituite-rimosse-nella-stessa-modifica)
-  * verify: [File di governo collegati al modello](../Requirements/WebConversation.md#file-di-governo-collegati-al-modello)
-  * verify: [Formulazione normativa degli obblighi](../Requirements/WebConversation.md#formulazione-normativa-degli-obblighi)
-  * verify: [Verifiche manuali giustificate](../Requirements/WebConversation.md#verifiche-manuali-giustificate)
----
-
 ### Prova della configurazione di esecuzione
 
 Con una funzione di lettura HTTP controllata, caricare la configurazione con `config.json` valido con e senza `language`, con preferenze del browser diverse, con file assente, JSON malformato, `backendUrl` mancante, non HTTP(S), con credenziali, query o frammento, `language` non supportato e un campo sconosciuto.
@@ -417,12 +368,12 @@ La prova passa se la schermata rispetta il contratto: anteprime di 60 caratteri 
   * satisfiedBy: [chat-state.test.ts](../../test/features/chat/model/chat-state.test.ts)
   * satisfiedBy: [conversation-list.test.ts](../../test/features/conversations/model/conversation-list.test.ts)
   * satisfiedBy: [conversations-api.test.ts](../../test/features/conversations/model/conversations-api.test.ts)
-  * verify: [Anteprima delle conversazioni nella barra laterale](../Requirements/WebConversation.md#anteprima-delle-conversazioni-nella-barra-laterale)
+  * verify: [Anteprima delle conversazioni nella barra laterale della chat web](../Requirements/WebConversation.md#anteprima-delle-conversazioni-nella-barra-laterale-della-chat-web)
   * verify: [Apertura e continuazione di una conversazione conservata](../Requirements/WebConversation.md#apertura-e-continuazione-di-una-conversazione-conservata)
   * verify: [Navigazione durante un turno in corso](../Requirements/WebConversation.md#navigazione-durante-un-turno-in-corso)
-  * verify: [Nuova chat iniziale nella barra laterale](../Requirements/WebConversation.md#nuova-chat-iniziale-nella-barra-laterale)
-  * verify: [Ripartenza dell'elenco conversazioni dopo un aggiornamento](../Requirements/WebConversation.md#ripartenza-dellelenco-conversazioni-dopo-un-aggiornamento)
-  * verify: [Stato del turno in elaborazione alla riapertura](../Requirements/WebConversation.md#stato-del-turno-in-elaborazione-alla-riapertura)
+  * verify: [Nuova chat iniziale della chat web](../Requirements/WebConversation.md#nuova-chat-iniziale-della-chat-web)
+  * verify: [Ripartenza dell'elenco conversazioni della chat web](../Requirements/WebConversation.md#ripartenza-dellelenco-conversazioni-della-chat-web)
+  * verify: [Stato del turno in elaborazione alla riapertura nella chat web](../Requirements/WebConversation.md#stato-del-turno-in-elaborazione-alla-riapertura-nella-chat-web)
   * verify: [Vista a due aree della conversazione](../Requirements/WebConversation.md#vista-a-due-aree-della-conversazione)
 ---
 
@@ -458,19 +409,20 @@ La prova passa se ogni dipendenza di `package.json` è fissata a una versione es
   * verify: [Stack del client web](../Requirements/WebConversation.md#stack-del-client-web)
 ---
 
-### Prova di integrazione con il backend fissato
+### Prova di integrazione della chat web con il backend affiancato
 
-Con un checkout del backend al commit dichiarato nel contratto sorgente, avviare il server conversazionale con un orchestratore controllato e il componente HTTP configurato con un'origine di esempio autorizzata. Usare il nucleo del client web per inviare turni, con esito completato, errore dopo frammenti e interruzione, e per leggere elenco e storico; aprire il canale e leggere l'elenco con l'origine autorizzata e con un'origine non autorizzata.
+Con il checkout di `ambrogio-backend` affiancato nella cartella di lavoro, oppure indicato da `AMBROGIO_BACKEND_REPO`, compilato, avviare il server conversazionale tramite l'ingresso di prova pubblico del backend, con un produttore di risposte deterministico e il componente HTTP configurato con un'origine di esempio autorizzata. Usare il nucleo del client web per inviare turni, con esito completato, errore dopo frammenti e interruzione, e per leggere elenco e storico; aprire il canale e leggere l'elenco con l'origine autorizzata e con un'origine non autorizzata.
 
 #### Details
-La prova passa se il client conversa e consulta tramite le sole interfacce pubbliche, il backend valida i messaggi con lo schema, l'origine autorizzata apre la sessione e riceve gli header CORS e quella non autorizzata viene respinta. Fallisce se il commit del backend non corrisponde, se un messaggio è rifiutato dallo schema o se il client usa componenti interni del server. La prova richiede il checkout del backend e resta fuori dalla CI. Il backend legge la configurazione dei componenti HTTP e «Conversazioni» da moduli TypeScript con esportazione predefinita, che la prova scrive in una directory temporanea.
+La prova passa se il client conversa e consulta tramite le sole interfacce pubbliche, il backend valida i messaggi con lo schema, l'origine autorizzata apre la sessione e riceve gli header CORS e quella non autorizzata viene respinta. Fallisce se il checkout del backend manca o non è compilato, con un messaggio che lo indica, se un messaggio è rifiutato dallo schema o se la prova o il client importano dal backend moduli diversi dall'ingresso di prova pubblico. La prova riporta il commit del backend usato e gira nella CI dopo il checkout affiancato.
 
 #### Metadata
   * type: test-verification
 
 #### Relations
   * derivedFrom: [Verifica del client web](#verifica-del-client-web)
-  * satisfiedBy: [pinned-backend.test.ts](../../integration/pinned-backend.test.ts)
+  * satisfiedBy: [backend.test.ts](../../integration/backend.test.ts)
   * satisfiedBy: [vitest.backend.config.ts](../../vitest.backend.config.ts)
   * verify: [Client conversazionale nel browser](../Requirements/WebConversation.md#client-conversazionale-nel-browser)
+  * verify: [Uso delle sole interfacce pubbliche del backend nella chat web](../Requirements/WebConversation.md#uso-delle-sole-interfacce-pubbliche-del-backend-nella-chat-web)
 ---

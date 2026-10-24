@@ -22,7 +22,7 @@ Sono state considerate la divisione per natura tecnica in nucleo, interfaccia e 
 
 ### Configurazione di esecuzione del client web
 
-All'apertura della pagina il client legge `config.json` dalla stessa directory di `index.html`, con una richiesta che non usa la cache del browser. Il file è un oggetto JSON con il campo obbligatorio `backendUrl`, l'URL base HTTP o HTTPS assoluto del backend, senza credenziali, query o frammento, con eventuale prefisso di percorso, e il campo opzionale `language`, che sceglie la lingua dell'interfaccia tra `it` e `en`. Se `language` manca, il client usa la prima lingua supportata tra quelle preferite dal browser, altrimenti `en`. Un valore di `language` non supportato o un campo diverso da `backendUrl` e `language` rende la configurazione non valida, così un errore di battitura non passa inosservato. Il client non sceglie un backend predefinito. Se il file manca, non è JSON valido o non rispetta questa forma, la pagina mostra l'errore di configurazione con il motivo, nella lingua preferita dal browser, e non apre sessioni né richieste verso il backend. Dall'URL base il client ricava gli endpoint HTTP `api/conversations` e l'indirizzo WebSocket `api/session`, con schema `ws:` per `http:` e `wss:` per `https:`. Il file appartiene all'installazione: non è incluso nel repository né nell'immagine e il repository ne contiene solo un esempio con valori segnaposto.
+All'apertura della pagina il client legge `config.json` dalla stessa directory di `index.html`, con una richiesta che non usa la cache del browser. Il file è un oggetto JSON con il campo obbligatorio `backendUrl`, l'URL base HTTP o HTTPS assoluto del backend, senza credenziali, query o frammento, con eventuale prefisso di percorso, e il campo opzionale `language`, che sceglie la lingua dell'interfaccia tra `it` e `en`. Se `language` manca, il client usa la prima lingua supportata tra quelle preferite dal browser, altrimenti `en`. Un valore di `language` non supportato o un campo diverso da `backendUrl` e `language` rende la configurazione non valida, così un errore di battitura non passa inosservato. Il client non sceglie un backend predefinito. Se il file manca, non è JSON valido o non rispetta questa forma, la pagina mostra l'errore di configurazione con il motivo, nella lingua preferita dal browser, e non apre sessioni né richieste verso il backend. Dall'URL base il client ricava gli endpoint HTTP `api/conversations` e l'indirizzo WebSocket `api/session`, con schema `ws:` per `http:` e `wss:` per `https:`. Il file appartiene all'installazione: non è incluso nel repository né nell'immagine e il repository ne contiene solo un esempio con valori segnaposto. Il browser dichiara l'origine della pagina nell'apertura del canale e nelle letture HTTP: il backend accetta il canale e autorizza le letture soltanto per le origini che chi installa elenca nella configurazione del componente HTTP del backend, secondo «Controllo dell'origine all'apertura della sessione» e «Politica CORS del componente HTTP».
 
 #### Alternative e conseguenze
 Sono state considerate una variabile d'ambiente del container da cui generare il file all'avvio, scartata perché backend e satellite escludono le variabili d'ambiente per i valori di configurazione, e la sola stessa origine tramite reverse proxy, che non richiede configurazione ma funziona soltanto dietro un proxy che instrada `/api` al backend.
@@ -32,17 +32,6 @@ Sono state considerate una variabile d'ambiente del container da cui generare il
 
 #### Relations
   * define: [Indirizzo del backend dalla configurazione di esecuzione](../Requirements/WebConversation.md#indirizzo-del-backend-dalla-configurazione-di-esecuzione)
----
-
-### Contratti pubblici del backend Ambrogio
-
-Il backend `ambrogio-backend` è la fonte autorevole del protocollo conversazionale `ambrogio.v1` e delle rotte HTTP di consultazione. La versione di riferimento è il commit `a570c013617fe7b9e944063dfd67ce2c00da398e` del backend, corrispondente al tag `v0.8.0`. Per i turni si consultano i contratti `Sessione del protocollo Ambrogio v1`, `Trasmissione in ingresso del protocollo Ambrogio v1`, `Trasmissione in uscita del protocollo Ambrogio v1`, `Esiti del turno nel protocollo Ambrogio v1`, `Motivi di rifiuto del turno`, `Errori ed estensioni del protocollo Ambrogio v1` e `Controllo dell'origine all'apertura della sessione` nel [modello del protocollo del backend](https://github.com/ambrogio-app/ambrogio-backend/blob/a4578db6564cc0bb96397ae5655ee7d00e022ea0/system-model/Contracts/ConversationProtocol.md), con la forma dei messaggi definita da [`protocol/ambrogio-v1.schema.json`](https://github.com/ambrogio-app/ambrogio-backend/blob/a4578db6564cc0bb96397ae5655ee7d00e022ea0/protocol/ambrogio-v1.schema.json) alla stessa revisione. Per la consultazione si usano `Risposta HTTP dell'elenco conversazioni` e `Risposta HTTP dello storico conversazionale` nel [modello dei contratti del backend](https://github.com/ambrogio-app/ambrogio-backend/blob/a4578db6564cc0bb96397ae5655ee7d00e022ea0/system-model/Contracts/FamilyConversation.md); per l'accesso da un'origine diversa da quella del backend si applica `Politica CORS del componente HTTP` nel [modello dei fondamenti del server](https://github.com/ambrogio-app/ambrogio-backend/blob/a4578db6564cc0bb96397ae5655ee7d00e022ea0/system-model/Contracts/ServerFoundation.md). Il browser dichiara sempre l'origine della pagina: il backend accetta il canale e autorizza le letture HTTP soltanto se quell'origine è elencata in `allowedOrigins` nella configurazione locale del suo componente HTTP, configurata da chi installa. Messaggi ed endpoint effettivi vanno verificati con prove di integrazione contro la revisione indicata. Un cambiamento di contratto nel backend richiede revisione esplicita di questo modello e delle verifiche del client.
-
-#### Metadata
-  * type: source
-
-#### Relations
-  * define: [Compatibilità con l'API conversazionale del backend](../Requirements/WebConversation.md#compatibilità-con-lapi-conversazionale-del-backend)
 ---
 
 ### Identità del client web nella sessione
@@ -171,31 +160,26 @@ GitHub Actions pubblica `ghcr.io/ambrogio-app/ambrogio-web` al push di un tag `v
   * define: [Pubblicazione dell'immagine Docker](../Requirements/WebConversation.md#pubblicazione-dellimmagine-docker)
 ---
 
-### Profilo di scansione dei segreti con gitleaks
+### Profilo di scansione dei segreti della chat web
 
-Il controllo dei segreti avviene in due punti.
-
-- **CI.** Il workflow `.github/workflows/secret-scan.yml` si esegue a ogni push su qualunque branch, a ogni pull request, su richiesta manuale e come workflow richiamabile. Recupera l'intera storia con `actions/checkout` e `fetch-depth: 0`. Scarica dalla release ufficiale gitleaks v8.30.1, archivio `gitleaks_8.30.1_linux_x64.tar.gz`, ne verifica lo SHA-256 `551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb` prima di estrarlo e interrompe il job se l'impronta non corrisponde. Esegue `gitleaks git --redact --no-banner --exit-code 1 .` sull'intera storia: un rilevamento fa fallire il job e l'output non riporta il valore del segreto. Il job dei controlli di `.github/workflows/ci.yml` installa gitleaks con la stessa versione, lo stesso archivio e la stessa verifica SHA-256, perché la suite di test esegue l'hook pre-commit e il comando della scansione.
-- **Hook locale.** Lo script POSIX versionato `.githooks/pre-commit` esegue `gitleaks git --pre-commit --staged --redact --no-banner .` sulle modifiche in staging. Se `gitleaks` non è disponibile nel `PATH`, stampa un messaggio che indica come installarlo e termina con esito non riuscito, impedendo il commit. L'hook si attiva in ogni clone con `git config core.hooksPath .githooks`.
-
-Si usa la configurazione predefinita di gitleaks, senza file `.gitleaks.toml`, finché non emergono falsi positivi da gestire esplicitamente con la persona.
+La chat web applica il profilo comune di scansione dei segreti con gitleaks nel workflow `.github/workflows/secret-scan.yml`, con il job `Gitleaks`, e nell'hook `.githooks/pre-commit`. Il checkout del job `Gitleaks` usa `actions/checkout` con `fetch-depth: 0`. Il job dei controlli di `.github/workflows/ci.yml` installa gitleaks con le stesse variabili, lo stesso archivio e la stessa verifica SHA-256 del job `Gitleaks`, perché la suite di test esegue l'hook pre-commit e il comando della scansione. La pubblicazione dell'immagine richiama la scansione dei segreti secondo il profilo di sicurezza dei workflow della chat web.
 
 #### Metadata
   * type: specification
 
 #### Relations
-  * define: [Scansione dei segreti nella CI](../Requirements/WebConversation.md#scansione-dei-segreti-nella-ci)
+  * define: [Scansione dei segreti nella CI della chat web](../Requirements/WebConversation.md#scansione-dei-segreti-nella-ci-della-chat-web)
 ---
 
 ### Profilo di sicurezza dei workflow GitHub Actions
 
-I workflow `.github/workflows/ci.yml`, `.github/workflows/secret-scan.yml` e `.github/workflows/publish-image.yml` seguono questo profilo:
+I workflow `.github/workflows/ci.yml`, `.github/workflows/secret-scan.yml` e `.github/workflows/publish-image.yml` della chat web applicano il profilo comune dei workflow GitHub Actions con questi valori:
 
-- **Permessi del token.** Ogni workflow dichiara al primo livello `permissions: contents: read`. Soltanto il job `publish` di `publish-image.yml` dichiara in più `packages: write`, necessario per scrivere in GHCR; nessun altro job riceve permessi di scrittura.
-- **Azioni fissate per commit.** Ogni azione esterna è indicata con lo SHA completo del commit e la versione in commento: `actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803` (v6), `actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38` (v6), `docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130` (v3) e `docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f` (v3). `actions/setup-node` ha `package-manager-cache: false`.
-- **Durata dei job.** Ogni job ha `timeout-minutes`: 15 per i controlli di `ci.yml`, 10 per gitleaks in `secret-scan.yml` e 45 per `publish` in `publish-image.yml`. I job usano il runner `ubuntu-24.04`.
-- **Credenziali.** Ogni `actions/checkout` ha `persist-credentials: false`. Il job `publish` passa `GITHUB_TOKEN` a `docker login` tramite variabile d'ambiente e `--password-stdin` ed esegue `docker logout ghcr.io` anche quando un passo precedente fallisce.
-- **Riuso dei controlli.** `ci.yml` e `secret-scan.yml` dichiarano `workflow_call`; `publish-image.yml` li richiama come job `checks` e `secret-scan`, da cui dipende il job `publish`, così il commit pubblicato supera gli stessi controlli dei push, senza passi duplicati.
+- **Permessi del token.** Soltanto il job `publish` di `publish-image.yml` dichiara in più `packages: write`, necessario per scrivere in GHCR.
+- **Azioni fissate per commit.** Oltre alle action del profilo comune, la pubblicazione usa `docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130` (v3) e `docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f` (v3). Ogni `actions/setup-node` ha `package-manager-cache: false`.
+- **Durata dei job.** `timeout-minutes` vale 15 per il job `checks` di `ci.yml`, 10 per `gitleaks` in `secret-scan.yml` e 45 per `publish` in `publish-image.yml`.
+- **Credenziali.** Il job `publish` passa `GITHUB_TOKEN` a `docker login` tramite variabile d'ambiente e `--password-stdin` ed esegue `docker logout ghcr.io` anche quando un passo precedente fallisce.
+- **Riuso dei controlli.** `publish-image.yml` richiama `ci.yml` e `secret-scan.yml` come job `checks` e `secret-scan`, da cui dipende il job `publish`.
 - **Concorrenza.** `publish-image.yml` ha `concurrency` con gruppo `web-release-${{ github.ref }}` e `cancel-in-progress: false`: due esecuzioni per lo stesso tag non si sovrappongono e una pubblicazione avviata non viene annullata.
 
 #### Metadata
@@ -219,20 +203,15 @@ Una Content-Security-Policy generata all'avvio per ammettere solo l'origine del 
   * define: [Header di sicurezza del server statico](../Requirements/WebConversation.md#header-di-sicurezza-del-server-statico)
 ---
 
-### Ruleset del branch principale
+### Ruleset del branch principale della chat web
 
-Il repository GitHub ha un ruleset di branch chiamato `main`, con applicazione `active`, che ha come destinazione il branch predefinito, nessun attore escluso e le regole:
-
-- `pull_request`, che ammette l'integrazione solo tramite pull request, con `required_approving_review_count` uguale a 0;
-- `required_status_checks`, con i controlli `Web client checks` e `Gitleaks` prodotti da GitHub Actions e `strict_required_status_checks_policy` uguale a `false`;
-- `non_fast_forward`, che vieta la riscrittura forzata;
-- `deletion`, che vieta la cancellazione del branch.
+Il ruleset `main` del repository della chat web segue il ruleset comune del branch principale e richiede i controlli `Web client checks` e `Gitleaks`.
 
 #### Metadata
   * type: specification
 
 #### Relations
-  * define: [Controlli obbligatori prima del merge](../Requirements/WebConversation.md#controlli-obbligatori-prima-del-merge)
+  * define: [Controlli obbligatori prima del merge della chat web](../Requirements/WebConversation.md#controlli-obbligatori-prima-del-merge-della-chat-web)
 ---
 
 ### Schermata web della chat
@@ -253,24 +232,6 @@ La pagina occupa esattamente l'altezza della finestra e non scorre nel suo insie
   * define: [Vista a due aree della conversazione](../Requirements/WebConversation.md#vista-a-due-aree-della-conversazione)
 ---
 
-### Script di integrità del modello
-
-Lo script `scripts/check-model.mjs` legge il modello con Reqvire 1.3.2 (`search --filter-type <tipo> --json` e `resources`) e i file tracciati con `git ls-files`, e segnala:
-
-- ogni requisito, contratto o verifica il cui testo, tolti code span, testi tra virgolette e nomi tra «», contiene una data (ISO `AAAA-MM-GG` oppure giorno, nome del mese e anno, in italiano o in inglese) o le formule `concordato il`, `concordata il`, `deciso il`, `decisa il`, `scelto il`, `scelta il`, anche con `con la persona`, `agreed on` e `decided on`;
-- ogni occorrenza, come parola intera e senza distinzione di maiuscole, di `può`, `possono`, `potrebbe`, `potrebbero`, `dovrebbe`, `dovrebbero`, `eventualmente`, `may`, `might`, `could`, `should` e `possibly` nell'enunciato di un requisito (il testo prima della sezione `#### Details`) o nel testo di un contratto, tolti code span, testi tra virgolette e nomi tra «»;
-- ogni verifica di ispezione, analisi o dimostrazione il cui contenuto non contiene `Non automatizzabile:`;
-- ogni file tracciato che corrisponde a `.github/workflows/**`, `.githooks/**`, `scripts/**`, `Dockerfile*`, `compose*.yaml`, `compose*.yml`, `.dockerignore`, `.gitignore`, `.npmrc`, `package.json`, `tsconfig*.json`, `vitest*.config.*`, a qualunque profondità, oppure a `pnpm-workspace.yaml` nella radice, e che nessun elemento del modello riferisce.
-
-Lo script stampa una riga per violazione e termina con stato 1 se ne trova almeno una, con stato 0 altrimenti. La CI lo esegue con `node scripts/check-model.mjs` dopo `validate` e `lint`.
-
-#### Metadata
-  * type: specification
-
-#### Relations
-  * define: [Controllo automatico dell'integrità del modello](../Requirements/WebConversation.md#controllo-automatico-dellintegrità-del-modello)
----
-
 ### Sessione ambrogio.v1 del client web
 
 La pagina apre una sola sessione WebSocket verso `api/session`, che trasporta i turni di tutte le conversazioni, offrendo il sottoprotocollo `ambrogio.v1`; la apre al primo turno e, se si chiude, la riapre al turno successivo. Dopo l'apertura invia `session.hello` con l'identità del client e attende `session.ready` per al massimo 10 secondi; in mancanza conclude il turno con l'avviso di backend non raggiungibile. Il browser dichiara l'origine della pagina nella richiesta di upgrade.
@@ -281,7 +242,7 @@ Ogni turno è una richiesta testuale: `input.start` con `requestId` UUID v4 e `s
   * type: specification
 
 #### Relations
-  * define: [Invio del turno sul canale conversazionale](../Requirements/WebConversation.md#invio-del-turno-sul-canale-conversazionale)
+  * define: [Invio del turno dalla chat web](../Requirements/WebConversation.md#invio-del-turno-dalla-chat-web)
 ---
 
 ### Stack e build del client web
@@ -296,15 +257,4 @@ Sono stati considerati Svelte, con bundle più piccolo ma ecosistema meno diffus
 
 #### Relations
   * define: [Stack del client web](../Requirements/WebConversation.md#stack-del-client-web)
----
-
-### Stati del turno testuale alla riapertura
-
-Un turno testuale accettato e ancora in elaborazione è distinguibile dagli scambi conclusi quando si consulta la conversazione. Finché l'esito non è conservato, lo storico HTTP lo restituisce con `status` `pending`; il client lo mostra come in elaborazione e invita la persona ad aggiornare più tardi. Alla consultazione successiva, se l'esito è stato conservato, il client presenta lo scambio concluso con risposta oppure errore. La riapertura non riprende le trasmissioni del turno, non recupera i frammenti parziali e non aggiorna automaticamente lo stato mostrato. Un turno `interrupted` è mostrato con l'avviso di risposta interrotta.
-
-#### Metadata
-  * type: state
-
-#### Relations
-  * define: [Stato del turno in elaborazione alla riapertura](../Requirements/WebConversation.md#stato-del-turno-in-elaborazione-alla-riapertura)
 ---
