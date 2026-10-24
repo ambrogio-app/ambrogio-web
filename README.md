@@ -34,7 +34,7 @@ flowchart LR
 - The page reads `config.json` next to `index.html` when it opens. The file is not in the image: you mount it.
 - The browser identifies itself as `web-<random UUID>`, kept in the browser's local storage.
 
-The backend version this client is compatible with is recorded in [`system-model/Contracts/WebConversation.md`](system-model/Contracts/WebConversation.md).
+The client uses only the public interfaces of the backend: the `ambrogio.v1` protocol and the HTTP API. Their contracts are in the model of `ambrogio-backend`.
 
 ## Configuration
 
@@ -79,14 +79,14 @@ pnpm dev
 | `pnpm typecheck` | TypeScript check |
 | `pnpm test` | Unit and interface tests with a simulated backend |
 | `pnpm build` | Static files in `dist/` |
-| `pnpm test:backend` | Integration test against a checkout of `ambrogio-backend` at the pinned revision, next to this repository or in `AMBROGIO_BACKEND_REPO`, built with `pnpm build` |
+| `pnpm test:backend` | Integration test against the `ambrogio-backend` checkout next to this repository, or in `AMBROGIO_BACKEND_REPO`, built with `pnpm build`, through the backend's public test entry point; it logs the backend commit it used |
 | `node scripts/verify-docker-image.mjs <image>` | Checks a built image: labels, user, port, headers and cache |
 
 The code is organised by feature in `src/features/` (`configuration`, `session`, `conversations`, `chat`), each with a pure `model/` and a React `ui/`; shared code is in `src/shared/` and `src/app/` wires the features together.
 
 ## Engineering model
 
-Requirements, contracts and verifications live in [`system-model/`](system-model/) and are managed with [Reqvire](https://reqvire.org/). Read them before changing behaviour.
+Requirements, contracts and verifications live in [`system-model/`](system-model/) and are managed with [Reqvire](https://reqvire.org/). They are part of the single Ambrogio model, checked from a workspace folder that holds this repository next to `ambrogio-model` and the other product repositories; see `ambrogio-model` for the Reqvire version and the model checks. Read them before changing behaviour.
 
 ## License
 

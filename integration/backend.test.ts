@@ -1,6 +1,6 @@
 import { execFileSync } from 'node:child_process';
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
-import { createServer } from 'node:net';
+import { existsSync } from 'node:fs';
+import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -11,29 +11,26 @@ import {
   ConversationSession, type SessionSocket,
 } from '../src/features/session/model/conversation-session';
 
-/** Backend revision declared in «Contratti pubblici del backend Ambrogio». */
-const expectedCommit = 'a570c013617fe7b9e944063dfd67ce2c00da398e';
 const allowedOrigin = 'https://web.example.com';
 const otherOrigin = 'https://other.example.com';
 const webRoot = fileURLToPath(new URL('..', import.meta.url));
 const backendRoot = resolve(process.env.AMBROGIO_BACKEND_REPO ?? resolve(webRoot, '../ambrogio-backend'));
+/** The public test entry point of the backend: the only backend module this test imports. */
+const testEntryPoint = join(backendRoot, 'apps/server/dist/runtime/test-server.js');
 
-type Runtime = { close(): Promise<void> };
 type ReplyPart = { kind: 'text'; text: string } | { kind: 'reply_expectation'; expectsReply: boolean };
+type TestServer = { origin: string; sessionUrl: URL; close(): Promise<void> };
+type StartTestServer = (options: {
+  directory: string;
+  language: 'it' | 'en';
+  reply: { produce(history: { turns: readonly { text: string }[] }): AsyncIterable<ReplyPart> };
+  allowedOrigins?: readonly string[];
+}) => Promise<TestServer>;
 
-let runtime: Runtime | undefined;
+let server: TestServer | undefined;
 let directory: string;
 let base: URL;
 const neverReply = new Promise<never>(() => {});
-
-async function freePort(): Promise<number> {
-  const probe = createServer();
-  await new Promise<void>(done => probe.listen(0, '127.0.0.1', done));
-  const address = probe.address();
-  if (!address || typeof address === 'string') throw new Error('No port');
-  await new Promise(done => probe.close(done));
-  return address.port;
-}
 
 function session(origin: string): ConversationSession {
   return new ConversationSession(base, {
@@ -59,39 +56,35 @@ async function until(check: () => Promise<boolean>, description: string): Promis
 }
 
 beforeAll(async () => {
+  if (!existsSync(join(backendRoot, '.git'))) {
+    throw new Error(`No ambrogio-backend checkout at ${backendRoot}: check it out side by side or set AMBROGIO_BACKEND_REPO`);
+  }
+  if (!existsSync(testEntryPoint)) {
+    throw new Error(`The backend at ${backendRoot} is not built: run pnpm install and pnpm build there`);
+  }
   const commit = execFileSync('git', ['-C', backendRoot, 'rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
-  expect(commit, 'the backend checkout must be at the revision declared in the model').toBe(expectedCommit);
-  const { startConversationServer } = await import(
-    pathToFileURL(join(backendRoot, 'apps/server/dist/runtime/conversation-server.js')).href);
+  process.stderr.write(`ambrogio-backend commit under test: ${commit}\n`);
+  const { startTestServer } = await import(pathToFileURL(testEntryPoint).href) as { startTestServer: StartTestServer };
   directory = await mkdtemp(join(tmpdir(), 'ambrogio-web-backend-'));
-  const port = await freePort();
-  // The backend loads each component configuration from a TypeScript module that exports it by default.
-  const httpConfig = join(directory, 'http.ts');
-  const conversationsConfig = join(directory, 'conversations.ts');
-  const module = (value: object) => `export default ${JSON.stringify(value)};\n`;
-  await writeFile(httpConfig, module({ host: '127.0.0.1', port, allowedOrigins: [allowedOrigin] }));
-  await writeFile(conversationsConfig, module({ archivePath: join(directory, 'archive.sqlite'), language: 'it' }));
-  runtime = await startConversationServer({ AMBROGIO_HTTP_CONFIG_PATH: httpConfig,
-    AMBROGIO_CONVERSATIONS_CONFIG_PATH: conversationsConfig }, directory, async () => ({
-    orchestrator: { async *produce(history: { turns: { text: string }[] }): AsyncGenerator<ReplyPart> {
+  server = await startTestServer({ directory, language: 'it', allowedOrigins: [allowedOrigin], reply: {
+    async *produce(history) {
       const last = history.turns.at(-1)?.text;
       if (last === 'errore') { yield { kind: 'text', text: 'parziale' }; throw new Error('controlled failure'); }
       if (last === 'arresto') { yield { kind: 'text', text: 'sto pensando' }; await neverReply; }
       yield { kind: 'text', text: 'Ciao ' };
       yield { kind: 'text', text: 'dal server.' };
       yield { kind: 'reply_expectation', expectsReply: false };
-    } },
-    async close() {},
-  })) as Runtime;
-  base = new URL(`http://127.0.0.1:${port}/`);
+    },
+  } });
+  base = new URL(`${server.origin}/`);
 });
 
 afterAll(async () => {
-  await runtime?.close();
-  await rm(directory, { recursive: true, force: true });
+  await server?.close();
+  if (directory) await rm(directory, { recursive: true, force: true });
 });
 
-describe('web client against the pinned backend', () => {
+describe('web client against the side-by-side backend', () => {
   it('converses, consults, enforces origins and reports interruptions through public interfaces', async () => {
     const page = session(allowedOrigin);
     const deltas: string[] = [];
@@ -123,8 +116,8 @@ describe('web client against the pinned backend', () => {
       const current = await api().history(conversationId);
       return current.ok && current.value.turns.at(-1)?.status === 'pending';
     }, 'the turn to interrupt');
-    const closing = runtime!.close();
-    runtime = undefined;
+    const closing = server!.close();
+    server = undefined;
     expect(await stopping).toEqual({ ok: false, error: { kind: 'interrupted', conversationId } });
     await closing;
   });

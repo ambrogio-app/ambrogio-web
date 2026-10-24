@@ -8,13 +8,26 @@ export function readRepositoryFile(path: string): string {
   return readFileSync(new URL(path, `file://${repositoryRoot}`), 'utf8');
 }
 
-/** Text of a contract of the Reqvire model, from its heading to the element separator. */
-export function contractText(title: string): string {
-  const model = readRepositoryFile('system-model/Contracts/WebConversation.md');
+/** Text of an element of a model file, from its heading to the element separator. */
+function elementText(model: string, title: string): string {
   const start = model.indexOf(`### ${title}\n`);
   if (start < 0) throw new Error(`contract not found: ${title}`);
   const end = model.indexOf('\n---', start);
   return model.slice(start, end < 0 ? undefined : end);
+}
+
+/** Text of a contract of the web client model. */
+export function contractText(title: string): string {
+  return elementText(readRepositoryFile('system-model/Contracts/WebConversation.md'), title);
+}
+
+/**
+ * Text of a common contract of `ambrogio-model`, which the workspace folder always holds next to this
+ * repository: locally and in CI, where `ambrogio-model` is cloned into `workspace/` before the tests.
+ */
+export function commonContractText(title: string): string {
+  const path = new URL('../ambrogio-model/system-model/Contracts/ModelDrivenDevelopment.md', `file://${repositoryRoot}`);
+  return elementText(readFileSync(path, 'utf8'), title);
 }
 
 /** The first group of `pattern` in `text`; fails when the pattern does not match. */

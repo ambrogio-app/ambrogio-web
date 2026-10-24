@@ -1,20 +1,21 @@
 import { describe, expect, it } from 'vitest';
-import { block, contractText, keys, readWorkflow, scalar, steps } from '../support/repository-files';
+import { block, commonContractText, contractText, keys, readWorkflow, scalar, steps } from '../support/repository-files';
 
+const common = commonContractText('Profilo comune dei workflow GitHub Actions');
 const profile = contractText('Profilo di sicurezza dei workflow GitHub Actions');
 const names = ['ci.yml', 'secret-scan.yml', 'publish-image.yml'] as const;
 const workflows = new Map(names.map(name => [name, readWorkflow(name)]));
 const workflow = (name: (typeof names)[number]) => workflows.get(name) ?? readWorkflow(name);
 
-/** Pinned actions of the profile: `owner/action@sha` (vN). */
-const pins = new Map([...profile.matchAll(/`([\w-]+\/[\w-]+)@([0-9a-f]{40})` \((v\d+)\)/g)]
+/** Pinned actions of the common and web profiles: `owner/action@sha` (vN). */
+const pins = new Map([...`${common}\n${profile}`.matchAll(/`([\w-]+\/[\w-]+)@([0-9a-f]{40})` \((v\d+)\)/g)]
   .map(([, action, sha, version]) => [action ?? '', { sha, version }]));
 
 const allJobs = names.flatMap(name => [...workflow(name).jobs].map(([id, text]) => ({ workflow: name, id, text })));
 const allSteps = allJobs.flatMap(job => steps(job.text));
 
 describe('GitHub Actions workflow security profile', () => {
-  it('reads the four pinned actions from the profile', () => {
+  it('reads the four pinned actions from the common and web profiles', () => {
     expect([...pins.keys()].sort()).toEqual([
       'actions/checkout', 'actions/setup-node', 'docker/setup-buildx-action', 'docker/setup-qemu-action',
     ]);
@@ -67,7 +68,8 @@ describe('GitHub Actions workflow security profile', () => {
       { id: 'gitleaks', runner: 'ubuntu-24.04', timeout: '10' },
       { id: 'publish', runner: 'ubuntu-24.04', timeout: '45' },
     ]);
-    expect(profile).toContain('15 per i controlli di `ci.yml`, 10 per gitleaks in `secret-scan.yml` e 45 per `publish`');
+    expect(profile).toContain('15 per il job `checks` di `ci.yml`, 10 per `gitleaks` in `secret-scan.yml` e 45 per `publish` in `publish-image.yml`');
+    expect(common).toContain('Ogni job usa il runner `ubuntu-24.04` e dichiara `timeout-minutes`');
   });
 
   it('does not persist the checkout credentials', () => {
