@@ -167,10 +167,7 @@ class OpenSession {
         return;
       }
       default:
-        // Server requests outside turns are not supported by this client.
-        if (text(message.id) && !/^(session|output|turn)\./.test(message.type)) {
-          this.write({ type: 'client.result', id: message.id, ok: false, reason: 'unsupported' });
-        }
+        // A server message of an unknown type is ignored.
     }
   }
 
