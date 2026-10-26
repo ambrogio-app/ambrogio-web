@@ -153,12 +153,11 @@ describe('ConversationSession', () => {
     expect(backend.connections()).toBe(2);
   });
 
-  it('answers requests outside turns as unsupported', async () => {
+  it('ignores server messages of an unknown type without answering them', async () => {
     backend = await startFakeBackend(script);
     const received = backend.received;
-    await session(backend.base).send('richiesta', null);
-    await vi.waitFor(() => expect(received)
-      .toContainEqual({ type: 'client.result', id: 'command-1', ok: false, reason: 'unsupported' }));
+    expect((await session(backend.base).send('richiesta', null)).ok).toBe(true);
+    expect(received.filter(message => message.type === 'client.result')).toEqual([]);
   });
 
   it('waits ten seconds for session.ready by default', () => {

@@ -165,10 +165,10 @@ La prova passa se ogni workflow dichiara al primo livello soltanto `permissions:
 
 ### Prova del protocollo del client web
 
-Contro un backend simulato con `ws`, inviare un nuovo turno e uno di continuazione, due turni contemporanei in conversazioni diverse, un testo vuoto, uno di soli spazi e uno oltre 64 KiB; far rispondere il backend con frammenti e `turn.completed`, con `turn.rejected`, con `turn.failed` dopo frammenti, con `turn.interrupted`, con `session.error`, chiudendo la sessione prima dell'esito, senza `session.ready` e con un messaggio non legato a un turno che contiene `id`.
+Contro un backend simulato con `ws`, inviare un nuovo turno e uno di continuazione, due turni contemporanei in conversazioni diverse, un testo vuoto, uno di soli spazi e uno oltre 64 KiB; far rispondere il backend con frammenti e `turn.completed`, con `turn.rejected`, con `turn.failed` dopo frammenti, con `turn.interrupted`, con `session.error`, chiudendo la sessione prima dell'esito, senza `session.ready` e con un messaggio di tipo sconosciuto.
 
 #### Details
-La prova passa se i messaggi inviati seguono il contratto della sessione, la sessione è unica e si riapre al turno successivo dopo una chiusura, i turni in conversazioni diverse procedono in parallelo, i testi non trasmissibili sono rifiutati senza aprire la sessione, il turno risulta riuscito soltanto con `turn.completed`, `turn.rejected` e `turn.failed` restituiscono il loro `message` al posto dei frammenti, chiusura e `turn.interrupted` producono l'esito interrotto, l'assenza di `session.ready` produce l'avviso di backend non raggiungibile dopo 10 secondi e il messaggio con `id` riceve `client.result` con `reason: "unsupported"`. Fallisce se un turno senza `turn.completed` risulta riuscito.
+La prova passa se i messaggi inviati seguono il contratto della sessione, la sessione è unica e si riapre al turno successivo dopo una chiusura, i turni in conversazioni diverse procedono in parallelo, i testi non trasmissibili sono rifiutati senza aprire la sessione, il turno risulta riuscito soltanto con `turn.completed`, `turn.rejected` e `turn.failed` restituiscono il loro `message` al posto dei frammenti, chiusura e `turn.interrupted` producono l'esito interrotto, l'assenza di `session.ready` produce l'avviso di backend non raggiungibile dopo 10 secondi e un messaggio del server di tipo sconosciuto è ignorato senza risposta e senza chiudere la sessione. Fallisce se un turno senza `turn.completed` risulta riuscito.
 
 #### Metadata
   * type: test-verification
