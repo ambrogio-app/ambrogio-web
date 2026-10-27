@@ -20,6 +20,18 @@ describe('CI workflow', () => {
       .toEqual(['  pull_request:', '  push:', '    branches: [main]', '  workflow_dispatch:', '  workflow_call:']);
   });
 
+  it('provides the PostgreSQL test server that the integration test passes to the backend test entry', () => {
+    const postgres = block(block(checks, 'services', 4), 'postgres', 6);
+    expect(scalar(postgres, 'image', 8)).toBe('pgvector/pgvector:pg18');
+    expect(scalar(block(postgres, 'env', 8), 'POSTGRES_HOST_AUTH_METHOD', 10)).toBe('trust');
+    expect(block(postgres, 'ports', 8)).toMatch(/^ {10}- 5432:5432$/m);
+    expect(postgres).toMatch(/--health-cmd "pg_isready/);
+    expect(scalar(block(checks, 'env', 4), 'AMBROGIO_TEST_DATABASE_URL', 6)).toBe('postgres://postgres@127.0.0.1:5432/postgres');
+    const integration = readRepositoryFile('integration/backend.test.ts');
+    expect(integration).toMatch(/process\.env\.AMBROGIO_TEST_DATABASE_URL/);
+    expect(integration).toMatch(/startTestServer\(\{ databaseUrl,/);
+  });
+
   it('has the single checks job named as the required status check', () => {
     expect([...workflow.jobs.keys()]).toEqual(['checks']);
     expect(scalar(checks, 'name', 4)).toBe('Web client checks');
