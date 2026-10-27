@@ -1,7 +1,5 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
-import { mkdtemp, rm } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -21,14 +19,13 @@ const testEntryPoint = join(backendRoot, 'apps/server/dist/runtime/test-server.j
 type ReplyPart = { kind: 'text'; text: string } | { kind: 'reply_expectation'; expectsReply: boolean };
 type TestServer = { origin: string; sessionUrl: URL; close(): Promise<void> };
 type StartTestServer = (options: {
-  directory: string;
+  databaseUrl: string;
   language: 'it' | 'en';
   reply: { produce(history: { turns: readonly { text: string }[] }): AsyncIterable<ReplyPart> };
   allowedOrigins?: readonly string[];
 }) => Promise<TestServer>;
 
 let server: TestServer | undefined;
-let directory: string;
 let base: URL;
 const neverReply = new Promise<never>(() => {});
 
@@ -62,11 +59,13 @@ beforeAll(async () => {
   if (!existsSync(testEntryPoint)) {
     throw new Error(`The backend at ${backendRoot} is not built: run pnpm install and pnpm build there`);
   }
+  // The test entry creates and drops its own archive database on this PostgreSQL test server.
+  const databaseUrl = process.env.AMBROGIO_TEST_DATABASE_URL;
+  if (!databaseUrl) throw new Error('Missing environment variable AMBROGIO_TEST_DATABASE_URL: start the PostgreSQL test server with ../ambrogio-model/scripts/test-postgres start and export the line it prints');
   const commit = execFileSync('git', ['-C', backendRoot, 'rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
   process.stderr.write(`ambrogio-backend commit under test: ${commit}\n`);
   const { startTestServer } = await import(pathToFileURL(testEntryPoint).href) as { startTestServer: StartTestServer };
-  directory = await mkdtemp(join(tmpdir(), 'ambrogio-web-backend-'));
-  server = await startTestServer({ directory, language: 'it', allowedOrigins: [allowedOrigin], reply: {
+  server = await startTestServer({ databaseUrl, language: 'it', allowedOrigins: [allowedOrigin], reply: {
     async *produce(history) {
       const last = history.turns.at(-1)?.text;
       if (last === 'errore') { yield { kind: 'text', text: 'parziale' }; throw new Error('controlled failure'); }
@@ -81,7 +80,6 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await server?.close();
-  if (directory) await rm(directory, { recursive: true, force: true });
 });
 
 describe('web client against the side-by-side backend', () => {

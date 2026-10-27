@@ -79,7 +79,7 @@ pnpm dev
 | `pnpm typecheck` | TypeScript check |
 | `pnpm test` | Unit and interface tests with a simulated backend |
 | `pnpm build` | Static files in `dist/` |
-| `pnpm test:backend` | Integration test against the `ambrogio-backend` checkout next to this repository, or in `AMBROGIO_BACKEND_REPO`, built with `pnpm build`, through the backend's public test entry point; it logs the backend commit it used |
+| `pnpm test:backend` | Integration test against the `ambrogio-backend` checkout next to this repository, or in `AMBROGIO_BACKEND_REPO`, built with `pnpm build`, through the backend's public test entry point, with the PostgreSQL test server in `AMBROGIO_TEST_DATABASE_URL` (start it with `../ambrogio-model/scripts/test-postgres start` and export the line it prints); it logs the backend commit it used |
 | `node scripts/verify-docker-image.mjs <image>` | Checks a built image: labels, user, port, headers and cache |
 
 The code is organised by feature in `src/features/` (`configuration`, `session`, `conversations`, `chat`), each with a pure `model/` and a React `ui/`; shared code is in `src/shared/` and `src/app/` wires the features together.
