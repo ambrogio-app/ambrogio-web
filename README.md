@@ -7,7 +7,9 @@
 
 # Ambrogio — web chat
 
-**Ambrogio** is an open source home assistant that you host yourself. This repository is its **web chat client**: an optional browser interface for talking to an Ambrogio backend, as an alternative to the terminal client.
+**Ambrogio**: talk to it like Alexa, chat with it like ChatGPT — one self-hosted AI assistant for your whole homelab. Multi-agent by design: each agent you configure handles one job, such as the house, music, weather or your documents, using the services you already host.
+
+This repository is its **web chat client**: an optional browser interface for talking to an Ambrogio backend, as an alternative to the terminal client.
 
 | Repository | Role |
 |---|---|
