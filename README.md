@@ -2,9 +2,9 @@
   <img src=".github/logo.svg" alt="Ambrogio" width="160">
 </p>
 
-# Ambrogio — web chat
+# Ambrogio web chat
 
-**Ambrogio**: talk to it like Alexa, chat with it like ChatGPT — one self-hosted AI assistant for your whole homelab. Multi-agent by design: each agent you configure handles one job, such as the house, music, weather or your documents, using the services you already host.
+**Ambrogio**: talk to it like Alexa, chat with it like ChatGPT. One self-hosted AI assistant for your whole homelab. Multi-agent by design: each agent you configure handles one job, such as the house, music, weather or your documents, using the services you already host.
 
 This repository is its **web chat client**: an optional browser interface for talking to an Ambrogio backend, as an alternative to the terminal client.
 
