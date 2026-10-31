@@ -1,0 +1,32 @@
+=== src/features/chat/model/turn.ts ===
+// A cycle inside one layer of one feature, through value imports.
+import { answerOf } from './answer';
+export const turn = (text: string) => answerOf(text);
+=== src/features/chat/model/answer.ts ===
+import { turn } from './turn.js';
+export const answerOf = (text: string) => text;
+export const again = turn;
+=== src/features/chat/ui/List.tsx ===
+// A cycle through type-only imports and a re-export.
+import type { RowProps } from './Row';
+export type ListProps = { rows: RowProps[] };
+=== src/features/chat/ui/Row.tsx ===
+export type { ListProps } from './List';
+export type RowProps = { text: string };
+=== src/shared/a.ts ===
+// A longer cycle in the same folder, closed by a type-only import.
+import { b } from './b';
+export const a = b;
+=== src/shared/b.ts ===
+import { c } from './c';
+export const b = c;
+=== src/shared/c.ts ===
+import type { a } from './a';
+export const c = 1;
+export type C = typeof a;
+=== src/shared/acyclic.ts ===
+// Imports without a cycle, a package and a style sheet are not violations.
+import { useState } from 'react';
+import './acyclic.css';
+import { b } from './b';
+export const acyclic = [useState, b];

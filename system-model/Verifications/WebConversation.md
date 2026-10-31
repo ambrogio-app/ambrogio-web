@@ -120,7 +120,7 @@ L'ispezione passa se le istruzioni della chat web rimandano a `ambrogio-model/AG
 In una cartella temporanea, creare un repository Git con l'hook `.githooks/pre-commit` del repository attivato tramite `core.hooksPath` e, accanto, una cartella `ambrogio-model` con uno script `scripts/model-checks` fittizio che registra la propria esecuzione e termina con esito riuscito oppure con un messaggio e un esito non riuscito; tentare un commit senza segreti con lo script che riesce, con lo script che fallisce, senza la cartella `ambrogio-model` affiancata e con un file che contiene un token fittizio costruito durante la prova.
 
 #### Details
-La prova passa se con lo script che riesce il commit viene creato e lo script risulta eseguito; se con lo script che fallisce il commit viene rifiutato e l'output riporta il messaggio dello script; se senza `ambrogio-model` affiancato il commit viene rifiutato con il messaggio del contratto «Controlli del modello nell'hook pre-commit»; e se il commit con il token viene rifiutato senza eseguire lo script. Fallisce se uno di questi esiti differisce. I controlli reali del modello non vengono eseguiti dalla prova: li esegue la CI con `model-checks`.
+La prova passa se con lo script che riesce il commit viene creato e lo script risulta eseguito con gli argomenti `--staged`, la radice del repository e il percorso assoluto del suo file indice; se con lo script che fallisce il commit viene rifiutato e l'output riporta il messaggio dello script; se senza `ambrogio-model` affiancato il commit viene rifiutato con il messaggio del contratto «Controlli del modello nell'hook pre-commit»; e se il commit con il token viene rifiutato senza eseguire lo script. Fallisce se uno di questi esiti differisce. I controlli reali del modello non vengono eseguiti dalla prova: li esegue la CI con `model-checks`.
 
 #### Metadata
   * type: test-verification
@@ -219,10 +219,10 @@ La prova passa se il workflow si attiva soltanto al push di tag `v*` e la sua es
 
 ### Prova del workflow di scansione dei segreti
 
-Leggere come testo `.github/workflows/secret-scan.yml` ed esaminarne attivazioni, checkout, installazione di gitleaks e scansione; eseguire il comando di scansione del workflow in un repository Git temporaneo, con una storia che contiene un token fittizio costruito durante la prova e con una storia priva di segreti.
+Leggere come testo `.github/workflows/secret-scan.yml` ed esaminarne attivazioni, checkout, installazione di gitleaks e scansione; eseguire il comando di scansione del workflow in un repository Git temporaneo, con una storia che contiene un token fittizio costruito durante la prova, con una in cui il token è seguito da un commento `gitleaks:allow` e con una storia priva di segreti.
 
 #### Details
-La prova passa se il workflow si attiva su push di qualunque branch, pull request, richiesta manuale e chiamata da altri workflow; il job `gitleaks`, chiamato `Gitleaks`, recupera l'intera storia con `fetch-depth: 0` e `persist-credentials: false`; versione, archivio e SHA-256 di gitleaks corrispondono al profilo comune di scansione dei segreti con gitleaks, l'archivio si scarica dalla release ufficiale, `sha256sum --check --strict` precede l'estrazione e lo script inizia con `set -euo pipefail`; la scansione esegue `gitleaks git --redact --no-banner --exit-code 1 .`; quel comando termina con stato 1 sulla storia con il token, senza riportarne il valore, e con stato 0 sulla storia pulita. Il repository temporaneo viene eliminato dopo la prova. Fallisce se una di queste condizioni manca, se gitleaks non è disponibile o se l'output riporta il valore del token.
+La prova passa se il workflow si attiva su push di qualunque branch, pull request, richiesta manuale e chiamata da altri workflow; il job `gitleaks`, chiamato `Gitleaks`, recupera l'intera storia con `fetch-depth: 0` e `persist-credentials: false`; versione, archivio e SHA-256 di gitleaks corrispondono al profilo comune di scansione dei segreti con gitleaks, l'archivio si scarica dalla release ufficiale, `sha256sum --check --strict` precede l'estrazione e lo script inizia con `set -euo pipefail`; la scansione esegue `gitleaks git --redact --no-banner --ignore-gitleaks-allow --exit-code 1 .`; quel comando termina con stato 1 sulla storia con il token, senza riportarne il valore, anche quando il token è seguito da un commento `gitleaks:allow`, e con stato 0 sulla storia pulita. Il repository temporaneo viene eliminato dopo la prova. Fallisce se una di queste condizioni manca, se gitleaks non è disponibile o se l'output riporta il valore del token.
 
 #### Metadata
   * type: test-verification
@@ -247,6 +247,22 @@ La prova passa se ogni comando e il campo di scrittura hanno un nome accessibile
   * derivedFrom: [Verifica del client web](#verifica-del-client-web)
   * satisfiedBy: [accessibility.test.tsx](../../test/app/accessibility.test.tsx)
   * verify: [Accessibilità di base dell'interfaccia](../Requirements/WebConversation.md#accessibilità-di-base-dellinterfaccia)
+---
+
+### Prova dell'assenza di cicli di import nella chat web
+
+Applicare la regola `no-circular-imports` alla fixture negativa `test/repository/fixtures/import-cycles.txt`, che contiene moduli di esempio con un ciclo di import di valori nello stesso layer, un ciclo di import di soli tipi e riesportazioni e un ciclo di tre moduli nella stessa cartella chiuso da un import di soli tipi, oltre a import privi di cicli, di package e di fogli di stile; poi applicarla al grafo degli import di tutti i file TypeScript di `src/` e `test/` letti come testo.
+
+#### Details
+La prova passa se sulla fixture la regola riporta esattamente i tre cicli, ciascuno con il nome `no-circular-imports` e il percorso del ciclo dal modulo primo in ordine alfabetico fino al ritorno a esso, senza segnalare gli import privi di cicli; e se il grafo di `src/` e `test/` ha archi e nessun ciclo. Fallisce se un ciclo della fixture non è riportato o è riportato senza il nome della regola o senza il percorso, se un import senza ciclo è segnalato o se il grafo del repository contiene un ciclo.
+
+#### Metadata
+  * type: test-verification
+
+#### Relations
+  * derivedFrom: [Verifica del client web](#verifica-del-client-web)
+  * satisfiedBy: [architecture.test.ts](../../test/repository/architecture.test.ts)
+  * verify: [Nessun ciclo di import nella chat web](../Requirements/WebConversation.md#nessun-ciclo-di-import-nella-chat-web)
 ---
 
 ### Prova dell'assenza di import del backend nella chat web
@@ -283,10 +299,10 @@ La prova passa se il job `checks` esegue `pnpm audit --audit-level high` nella c
 
 ### Prova dell'hook pre-commit dei segreti della chat web
 
-In un repository Git temporaneo con `.githooks/pre-commit` attivato tramite `core.hooksPath`, mettere in staging un file con un token fittizio costruito durante la prova e tentare il commit; ripetere con un file privo di segreti e con un `PATH` che contiene soltanto `git`, senza `gitleaks`.
+In un repository Git temporaneo con `.githooks/pre-commit` attivato tramite `core.hooksPath`, mettere in staging un file con un token fittizio costruito durante la prova e tentare il commit; ripetere con lo stesso token seguito da un commento `gitleaks:allow`, con un file privo di segreti, con un `PATH` che contiene soltanto `git`, senza `gitleaks`, e con un `PATH` in cui `gitleaks` riporta una versione diversa da 8.30.1.
 
 #### Details
-La prova passa se il commit con il token fittizio viene rifiutato e l'output non ne riporta il valore, il commit senza segreti riesce e, senza `gitleaks` nel `PATH`, il commit viene rifiutato con un messaggio che indica come installare gitleaks 8.30.1. Il repository temporaneo viene eliminato dopo la prova. Fallisce se uno dei tre esiti differisce o se gitleaks non è disponibile per la prova.
+La prova passa se il commit con il token fittizio viene rifiutato e l'output non ne riporta il valore, anche quando il token è seguito da un commento `gitleaks:allow`; il commit senza segreti riesce; senza `gitleaks` nel `PATH`, o con un `gitleaks` di versione diversa da 8.30.1, il commit viene rifiutato con un messaggio che indica la versione richiesta e dove installarla. Il repository temporaneo viene eliminato dopo la prova. Fallisce se uno di questi esiti differisce o se gitleaks non è disponibile per la prova.
 
 #### Metadata
   * type: test-verification
@@ -419,10 +435,10 @@ La prova passa se il Markdown delle risposte produce gli elementi attesi, l'HTML
 
 ### Prova della schermata della chat
 
-In jsdom con Testing Library, aprire la pagina con un backend simulato: verificare la voce «Nuova chat», inviare il primo turno e osservare risposta progressiva e nome della voce; aprire una conversazione conservata, anche iniziata da un altro client, e continuarla; caricare elenco e pagina successiva, aggiornare e verificare la ripartenza dalla prima pagina; simulare uno storico non leggibile, un turno `pending` poi concluso, un turno `interrupted`; durante un turno aprire un'altra chat, inviarvi un turno e tornare indietro; ripetere a una larghezza inferiore a 720 pixel e nelle due lingue. Eseguire inoltre la build di produzione con Vite in una directory temporanea ed esaminare i fogli di stile prodotti, perché jsdom non applica i fogli di stile della build.
+In jsdom con Testing Library, aprire la pagina con un backend simulato: verificare la voce «Nuova chat», inviare il primo turno e osservare risposta progressiva e nome della voce; aprire una conversazione conservata, anche iniziata da un altro client, e continuarla; caricare elenco e pagina successiva, aggiornare e verificare la ripartenza dalla prima pagina; simulare uno storico non leggibile, un turno `pending` poi concluso, un turno `interrupted`; durante un turno premere `Invio` con un testo nella stessa chat, poi aprire un'altra chat, inviarvi un turno e tornare indietro; ripetere a una larghezza inferiore a 720 pixel e nelle due lingue. Eseguire inoltre la build di produzione con Vite in una directory temporanea ed esaminare i fogli di stile prodotti, perché jsdom non applica i fogli di stile della build.
 
 #### Details
-La prova passa se la schermata rispetta il contratto: anteprime di 60 caratteri o identificativo di 8, ripartenza dell'elenco senza cursore dopo «Aggiorna», stato in elaborazione con invito ad aggiornare e scambio concluso alla consultazione successiva, avviso di risposta interrotta, invio bloccato solo nella chat con il turno in corso, `Invio` e `Maiusc+Invio` come previsto, pannello delle conversazioni sotto 720 pixel e testi fissi nella lingua scelta secondo il dizionario; e se i fogli di stile della build contengono i colori dei temi chiaro e scuro, il font della pagina e l'altezza a tutta finestra di `html`, `body` e della radice dell'applicazione. Fallisce se la pagina perde la conversazione corrente, invia due turni nella stessa conversazione, blocca le altre chat durante un turno o se la build perde gli stili globali. Lo scorrimento separato delle due aree con il campo di scrittura visibile si osserva nella dimostrazione nel browser.
+La prova passa se la schermata rispetta il contratto: anteprime di 60 caratteri o identificativo di 8, ripartenza dell'elenco senza cursore dopo «Aggiorna», stato in elaborazione con invito ad aggiornare e scambio concluso alla consultazione successiva, avviso di risposta interrotta, invio bloccato solo nella chat con il turno in corso, anche con `Invio` nel campo, e testo non inviato che non passa all'altra chat, `Invio` e `Maiusc+Invio` come previsto, pannello delle conversazioni sotto 720 pixel e testi fissi nella lingua scelta secondo il dizionario; e se i fogli di stile della build contengono i colori dei temi chiaro e scuro, il font della pagina e l'altezza a tutta finestra di `html`, `body` e della radice dell'applicazione. Fallisce se la pagina perde la conversazione corrente, invia due turni nella stessa conversazione, blocca le altre chat durante un turno o se la build perde gli stili globali. Lo scorrimento separato delle due aree con il campo di scrittura visibile si osserva nella dimostrazione nel browser.
 
 #### Metadata
   * type: test-verification
@@ -492,3 +508,4 @@ La prova passa se il client conversa e consulta tramite le sole interfacce pubbl
   * verify: [Client conversazionale nel browser](../Requirements/WebConversation.md#client-conversazionale-nel-browser)
   * verify: [Uso delle sole interfacce pubbliche del backend nella chat web](../Requirements/WebConversation.md#uso-delle-sole-interfacce-pubbliche-del-backend-nella-chat-web)
 ---
+

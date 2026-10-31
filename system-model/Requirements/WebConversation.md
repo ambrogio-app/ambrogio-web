@@ -376,6 +376,9 @@ Motivo: seguire il browser è più comodo per chi non configura il campo, al cos
 
 Mentre un turno è in corso in una conversazione, il client web deve consentire di aprire, creare e continuare altre conversazioni e di aggiornare l'elenco, impedendo soltanto un nuovo invio nella conversazione con il turno in corso fino al suo esito.
 
+#### Details
+Il client raffina la regola del protocollo per i client con lo stato di ciascuna chat della pagina: dall'invio fino all'esito del turno il pulsante di invio di quella chat è disabilitato e `Invio` nel campo di scrittura non invia, mentre il campo resta modificabile; le altre chat restano inviabili sulla stessa sessione `ambrogio.v1`.
+
 #### Metadata
   * type: requirement
 
@@ -384,9 +387,25 @@ Mentre un turno è in corso in una conversazione, il client web deve consentire 
   * [Sessione ambrogio.v1 del client web](../Contracts/WebConversation.md#sessione-ambrogiov1-del-client-web)
 
 #### Relations
+  * derivedFrom: [Disabilitazione degli ingressi durante un turno](../../../ambrogio-backend/system-model/Requirements/FamilyConversation.md#disabilitazione-degli-ingressi-durante-un-turno)
   * satisfiedBy: [ChatApplication.tsx](../../src/app/ChatApplication.tsx)
   * satisfiedBy: [chat-state.ts](../../src/features/chat/model/chat-state.ts)
   * specify: [Conversazione testuale nel browser](../Capabilities/WebConversation.md#conversazione-testuale-nel-browser)
+---
+
+### Nessun ciclo di import nella chat web
+
+Il grafo degli import dei file TypeScript di `src/` e di `test/` della chat web, compresi gli import di soli tipi e le riesportazioni, non deve contenere cicli, e la suite di test deve rifiutare ogni ciclo con la regola `no-circular-imports`, riportandone il percorso.
+
+#### Details
+Il client raffina il requisito comune con la stessa estrazione testuale degli specificatori usata dalle altre regole di architettura della chat web: uno specificatore relativo è un arco verso il file TypeScript del repository con lo stesso percorso, con `.ts` o `.tsx` aggiunto o al posto di `.js`, oppure verso il suo `index.ts` o `index.tsx`; i package e i file non TypeScript, come i fogli di stile, non sono archi. Ogni ciclo elementare è riportato una volta, come `no-circular-imports: <modulo> -> … -> <modulo>` a partire dal modulo primo in ordine alfabetico. La fixture negativa `test/repository/fixtures/import-cycles.txt` contiene un ciclo fra moduli dello stesso layer, uno di soli tipi e riesportazioni e uno più lungo nella stessa cartella chiuso da un import di soli tipi.
+
+#### Metadata
+  * type: requirement
+
+#### Relations
+  * derivedFrom: [Nessun ciclo di import](../../../ambrogio-model/system-model/Requirements/CodeArchitecture.md#nessun-ciclo-di-import)
+  * satisfiedBy: [architecture.test.ts](../../test/repository/architecture.test.ts)
 ---
 
 ### Nuova chat iniziale della chat web
@@ -702,7 +721,7 @@ Quando la chat web comunica con il backend, deve usare soltanto il protocollo `a
 Quando la pagina del client web è aperta, il client deve mostrare l'elenco delle conversazioni e la conversazione corrente con il campo di scrittura, mantenendo visibili conversazione e campo di scrittura mentre la persona compone, invia e riceve un turno, anche su schermi stretti.
 
 #### Details
-Alternative: bloccare invio, navigazione e aggiornamento durante un turno, come nel client terminale (più semplice, ma impedisce di consultare o usare altre conversazioni mentre una risposta è lenta).
+Alternative: bloccare invio, navigazione e aggiornamento durante un turno (più semplice, ma impedisce di consultare o usare altre conversazioni mentre una risposta è lenta).
 
 Alternative per i colori: un solo tema chiaro (meno stili, ma senza rispettare la preferenza del dispositivo).
 
@@ -716,3 +735,4 @@ Motivo: la navigazione libera sfrutta l'elaborazione parallela di conversazioni 
   * satisfiedBy: [ChatApplication.tsx](../../src/app/ChatApplication.tsx)
   * specify: [Conversazione testuale nel browser](../Capabilities/WebConversation.md#conversazione-testuale-nel-browser)
 ---
+
