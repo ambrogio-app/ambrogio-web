@@ -87,12 +87,15 @@ describe('chat screen', () => {
     await waitFor(() => expect(browser.server.turns).toHaveLength(1));
     act(() => { browser.server.lastTurn().accept(ids.created).chunk('Sto pensando'); });
     expect(screen.getByRole('button', { name: 'Invia' })).toHaveProperty('disabled', true);
+    await user.type(composer(), 'Ancora{Enter}');
+    expect(browser.server.turns).toHaveLength(1);
 
     await user.click(await screen.findByRole('button', { name: 'Vecchia' }));
     expect(screen.getByRole('button', { name: 'Invia' })).toHaveProperty('disabled', false);
     await user.type(composer(), 'Altra domanda{Enter}');
     await waitFor(() => expect(browser.server.turns).toHaveLength(2));
     expect(browser.server.lastTurn().conversationId).toBe(ids.stored);
+    expect(browser.server.lastTurn().text).toBe('Altra domanda');
 
     await user.click(screen.getByRole('button', { name: 'Domanda lenta' }));
     expect(screen.getByText('Sto pensando')).toBeTruthy();

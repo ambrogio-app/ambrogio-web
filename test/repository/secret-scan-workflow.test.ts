@@ -48,9 +48,10 @@ describe('secret scan workflow', () => {
     expect(install.indexOf('tar -xzf')).toBeGreaterThan(check);
   });
 
-  it('scans the history with redaction and a failing exit code', () => {
-    expect(runOf(stepNamed(gitleaksSteps, 'Scan the history'))).toBe('gitleaks git --redact --no-banner --exit-code 1 .');
-    expect(profile).toContain('`gitleaks git --redact --no-banner --exit-code 1 .`');
+  it('scans the history with redaction, without inline exceptions and with a failing exit code', () => {
+    const scan = 'gitleaks git --redact --no-banner --ignore-gitleaks-allow --exit-code 1 .';
+    expect(runOf(stepNamed(gitleaksSteps, 'Scan the history'))).toBe(scan);
+    expect(profile).toContain(`\`${scan}\``);
   });
 
   describe('scan command on a temporary history', () => {
@@ -82,6 +83,19 @@ describe('secret scan workflow', () => {
       expect(result.output).toContain('leaks found: 1');
       expect(result.output).not.toContain(token);
       expect(result.output).not.toContain(token.slice(4));
+    });
+
+    it('fails on a committed secret followed by an inline gitleaks:allow comment', () => {
+      const token = fakeGitHubToken();
+      sandbox.write('settings.txt', `github_token = "${token}" # gitleaks:allow\n`);
+      sandbox.mustRun('git', ['add', 'settings.txt']);
+      sandbox.mustRun('git', ['commit', '--quiet', '-m', 'Add settings']);
+
+      const result = sandbox.run(command[0] ?? '', command.slice(1));
+
+      expect(result.status).toBe(1);
+      expect(result.output).toContain('leaks found: 1');
+      expect(result.output).not.toContain(token);
     });
 
     it('passes on a history without secrets', () => {

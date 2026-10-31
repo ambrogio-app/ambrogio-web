@@ -1,6 +1,6 @@
-import { chmodSync, existsSync, mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { isAbsolute, join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { fakeGitHubToken, GitSandbox, requireGitleaks, which } from '../support/git-sandbox';
 import { commonContractText, readRepositoryFile } from '../support/repository-files';
@@ -9,14 +9,14 @@ describe('pre-commit hook', () => {
   let sandbox: GitSandbox;
   let invoked: string;
 
-  /** A fake `model-checks` of a sibling `ambrogio-model`: it records its run and passes or fails. */
+  /** A fake `model-checks` of a sibling `ambrogio-model`: it records its arguments, one per line, and passes or fails. */
   function siblingModelChecks(passes: boolean): void {
     const scripts = join(sandbox.root, 'ambrogio-model', 'scripts');
     mkdirSync(scripts, { recursive: true });
     const script = join(scripts, 'model-checks');
     writeFileSync(script, [
       '#!/bin/sh',
-      `echo invoked > '${invoked}'`,
+      `printf '%s\\n' "$@" > '${invoked}'`,
       ...(passes ? ['exit 0'] : ['echo "model-checks: fake model violation" >&2', 'exit 1']),
       '',
     ].join('\n'));
@@ -61,7 +61,22 @@ describe('pre-commit hook', () => {
     expect(existsSync(invoked)).toBe(false);
   });
 
-  it('lets a commit without secrets through when the model checks of the sibling ambrogio-model pass', () => {
+  it('blocks a secret even when an inline gitleaks:allow comment follows it', () => {
+    siblingModelChecks(true);
+    const token = fakeGitHubToken();
+    sandbox.write('settings.txt', `github_token = "${token}" # gitleaks:allow\n`);
+    sandbox.mustRun('git', ['add', 'settings.txt']);
+
+    const result = sandbox.run('git', ['commit', '--quiet', '-m', 'Add settings']);
+
+    expect(result.status).not.toBe(0);
+    expect(result.output).toContain('leaks found: 1');
+    expect(result.output).not.toContain(token);
+    expect(sandbox.commitCount()).toBe(0);
+    expect(existsSync(invoked)).toBe(false);
+  });
+
+  it('lets a commit without secrets through when the model checks of the sibling ambrogio-model pass on the staged content', () => {
     siblingModelChecks(true);
 
     const result = commitNotes();
@@ -69,6 +84,12 @@ describe('pre-commit hook', () => {
     expect(result.status).toBe(0);
     expect(sandbox.commitCount()).toBe(1);
     expect(existsSync(invoked)).toBe(true);
+    const [mode, top, index] = readFileSync(invoked, 'utf8').split('\n').filter(Boolean);
+    const root = realpathSync(sandbox.directory);
+    expect(mode).toBe('--staged');
+    expect(top).toBe(root);
+    expect(index !== undefined && isAbsolute(index)).toBe(true);
+    expect(index?.startsWith(join(root, '.git', 'index'))).toBe(true);
   });
 
   it('blocks the commit when the model checks fail', () => {
@@ -94,25 +115,41 @@ describe('pre-commit hook', () => {
     expect(sandbox.commitCount()).toBe(0);
   });
 
-  it('blocks the commit and explains how to install gitleaks when it is not on PATH', () => {
+  /**
+   * Tries a clean commit with a PATH holding only git and, when `version` is given, a fake gitleaks that
+   * prints that version; returns the result.
+   */
+  function commitWithout8301(version?: string) {
     siblingModelChecks(true);
     const git = which('git');
     if (git === undefined) throw new Error('git not found on PATH');
     const bin = mkdtempSync(join(tmpdir(), 'ambrogio-web-bin-'));
     try {
       symlinkSync(git, join(bin, 'git'));
+      if (version !== undefined) {
+        writeFileSync(join(bin, 'gitleaks'), `#!/bin/sh\n[ "$1" = version ] && echo '${version}'\nexit 0\n`);
+        chmodSync(join(bin, 'gitleaks'), 0o755);
+      }
       sandbox.write('notes.txt', 'Nothing secret here.\n');
       sandbox.mustRun('git', ['add', 'notes.txt']);
-
-      const result = sandbox.run(join(bin, 'git'), ['commit', '--quiet', '-m', 'Add notes'], { PATH: bin });
-
-      expect(result.status).not.toBe(0);
-      expect(result.output).toContain('gitleaks not found on PATH; commit blocked.');
-      expect(result.output).toContain('Install gitleaks 8.30.1 from https://github.com/gitleaks/gitleaks/releases');
-      expect(sandbox.commitCount()).toBe(0);
-      expect(existsSync(invoked)).toBe(false);
+      return sandbox.run(join(bin, 'git'), ['commit', '--quiet', '-m', 'Add notes'], { PATH: bin });
     } finally {
       rmSync(bin, { recursive: true, force: true });
     }
+  }
+
+  const gitleaksMessage = 'pre-commit: gitleaks 8.30.1 is not on PATH; install gitleaks 8.30.1 '
+    + '(https://github.com/gitleaks/gitleaks/releases/tag/v8.30.1) and retry.';
+
+  it.each([
+    ['is not on PATH', undefined],
+    ['on PATH is not version 8.30.1', '8.29.0'],
+  ])('blocks the commit and explains how to install gitleaks 8.30.1 when gitleaks %s', (_case, version) => {
+    const result = commitWithout8301(version);
+
+    expect(result.status).not.toBe(0);
+    expect(result.output).toContain(gitleaksMessage);
+    expect(sandbox.commitCount()).toBe(0);
+    expect(existsSync(invoked)).toBe(false);
   });
 });

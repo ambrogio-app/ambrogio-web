@@ -83,7 +83,8 @@ export function ChatPanel({ chat, title, canSend, announcement, onSend, field, t
       <div className={accessibility.visuallyHidden} aria-live="polite">
         {announced && <p key={announced.serial}>{outcomeText(announced.outcome, t)}</p>}
       </div>
-      <Composer canSend={canSend} onSend={onSend} {...(field ? { field } : {})} />
+      {/* One field per chat: a text written in a chat is never sent in another one. */}
+      <Composer key={chat.key} canSend={canSend} onSend={onSend} {...(field ? { field } : {})} />
     </main>
   );
 }
